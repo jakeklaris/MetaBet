@@ -1,8 +1,11 @@
 import flask
 from flask_sqlalchemy import SQLAlchemy
-
 # app is a single object used by all the code modules in this package
 app = flask.Flask(__name__)  # pylint: disable=invalid-name
+
+# MySQL DB
+app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://root:Orangeshoe355@localhost/metabet"
+db = SQLAlchemy(app)
 
 # Read settings from config module (insta485/config.py)
 app.config.from_object('metabet.config')

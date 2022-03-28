@@ -3,12 +3,15 @@ Insta485 index (main) view.
 URLs include:
 /
 """
+import re
 import flask
 import metabet
+from metabet.model import get_db
 
 @metabet.app.route('/')
 def show_index():
     """Display / route."""
+    print(get_db())
     return flask.redirect(flask.url_for('post_login'))
 
 @metabet.app.route('/login', methods=['GET'])
@@ -23,7 +26,9 @@ def post_login():
 
     return flask.redirect(flask.url_for('show_vote'))
 
-@metabet.app.route('/poll', methods=['GET'])
+@metabet.app.route('/poll', methods=['GET', 'POST'])
 def show_vote():
     context = {}
+    if flask.request.method == 'POST':
+        context = {'post': 'POST REQUEST'}
     return flask.render_template('vote.html', **context)
