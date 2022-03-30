@@ -120,6 +120,20 @@ def signup():
 
     return flask.redirect(flask.url_for('show_login'))
 
+# ROUTE to show the user the vote -- POSSIBLY AN API
+@metabet.app.route('/vote', methods=['GET'])
+def show_vote():
+    context = {}
+
+    return flask.render_template('vote.html', **context)
+
+# ROUTE for user votes -- POSSIBLY AN API
+@metabet.app.route('/vote', methods=['POST'])
+def post_vote():
+    context = {}
+
+    return flask.render_template('vote.html', **context)
+
 def get_num_nfts(user_id):
     conn = get_db()
     query = 'SELECT COUNT(*) FROM owners o, nfts n WHERE o.user_id = n.owner AND o.user_id = {}'.format(sqlify(user_id))
@@ -163,9 +177,8 @@ def add_choices(date, choices):
         print("Added choice {} for poll on date: {}".format(choice, date))
 
 
-def get_choices(date):
-    now = datetime.date(datetime.now())
-    query = 'SELECT c.choice FROM polls p, choices c WHERE p.poll_date = {} AND p.poll_date = c.poll_date'.format(sqlify(now))
+def get_choices(date=datetime.date(datetime.now())):
+    query = 'SELECT c.choice FROM polls p, choices c WHERE p.poll_date = {} AND p.poll_date = c.poll_date'.format(sqlify(date))
 
     conn = get_db()
     result = conn.execute(query)
@@ -173,7 +186,7 @@ def get_choices(date):
     choices = []
 
     for choice in result:
-        print(choice)
+        choices.append(choice[0])
 
     return choices
 
@@ -193,17 +206,3 @@ def add_user_vote(user_id, choice):
 
 def sqlify(word):
     return '\'' + str(word) + '\''
-
-# ROUTE to show the user the vote -- POSSIBLY AN API
-@metabet.app.route('/vote', methods=['GET'])
-def show_vote():
-    context = {}
-
-    return flask.render_template('vote.html', **context)
-
-# ROUTE for user votes -- POSSIBLY AN API
-@metabet.app.route('/vote', methods=['POST'])
-def post_vote():
-    context = {}
-
-    return flask.render_template('vote.html', **context)
