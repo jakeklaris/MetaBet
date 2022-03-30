@@ -103,8 +103,6 @@ def signup():
     password = flask.request.form.get('password')
     password_2 = flask.request.form.get('password_copy')
 
-    add_user_vote('jakekk', 'OVER')
-
     # check if passwords match
     if password_2 != password:
         flask.flash('Passwords do not match. Try Again.')
