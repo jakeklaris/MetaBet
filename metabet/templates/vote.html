@@ -1,11 +1,12 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="column is-4 is-offset-4">
-    <h3 class="title">Login</h3>
-    <form actuion='/vote' METHOD="POST">
-        <input type='text' placeholder='name' name='name'>
-        <input type='submit' value='Add Name'>
-    </form>
-</div>
+<body>
+    <!-- Plain old HTML and jinja2 nav bar goes here -->
+    <div id="reactEntry">
+      Loading ...
+    </div>
+    <!-- Load JavaScript -->
+    <script type="text/javascript" src="{{ url_for('static', filename='js/bundle.js') }}"></script>
+</body>
 {% endblock %}
