@@ -122,14 +122,12 @@ def signup():
 @metabet.app.route('/vote', methods=['GET'])
 def show_vote():
     context = {}
-
     return flask.render_template('vote.html', **context)
 
 # ROUTE for user votes -- POSSIBLY AN API
 @metabet.app.route('/vote', methods=['POST'])
 def post_vote():
     context = {}
-
     return flask.render_template('vote.html', **context)
 
 def get_num_nfts(user_id):
