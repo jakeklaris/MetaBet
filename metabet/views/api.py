@@ -26,20 +26,20 @@ def get_poll(user_id):
     context['poll']['numChoices'] = len(return_choices)
 
     # check if user has voted
-    
+
     context['user_id'] = user_id
-    context['voted'] = False
+    context['voted'], context['selection'] = has_voted(user_id)
 
     return flask.jsonify(**context), 200
 
-@metabet.app.route('/api/votes/', methods=['GET'])
+
+@metabet.app.route('/api/votes/', methods=['POST'])
 def user_vote():
-    print('hi')
     data = flask.request.get_json()
-    print(data)
-    user_id = data['user_id']
-    print(user_id)
-    return
+    add_vote(data['user_id'], data['selection'])
+
+    context = {}
+    return flask.jsonify(**context), 200
 
 def get_db_poll(date=datetime.date(datetime.now())):
     query = 'SELECT * FROM polls p WHERE p.poll_date = {}'.format(sqlify(date))
@@ -74,3 +74,20 @@ def get_choices(date=datetime.date(datetime.now())):
         choices.append(choice[0])
 
     return choices
+
+def add_vote(user_id, vote, date=datetime.date(datetime.now())):
+    query = 'INSERT INTO votes VALUES ({},{},{})'.format(sqlify(user_id), sqlify(date), sqlify(vote))
+    conn = get_db()
+    conn.execute(query)
+    
+
+def has_voted(user_id, date=datetime.date(datetime.now())):
+    query = 'SELECT count(*), v.choice FROM votes v WHERE v.user_id = {} AND v.vote_date = {}'.format(sqlify(user_id), sqlify(date))
+
+    conn = get_db()
+    result = conn.execute(query)
+
+    for count in result:
+        return (False, '') if (count[0] == 0) else (count[0], count[1])
+    
+    return False, ''

@@ -13,21 +13,6 @@ import { now } from 'moment';
 //   numChoices: 2
 // }
 
-// const choices = [
-//   {
-//     avatar: '../static/images/heat_image.png',
-//     date: 'Joined in 2013',
-//     choiceName: 'Over 212.5',
-//     description: 'Primary Contact',
-//   },
-//   {
-//     avatar: '../static/images/bucks_image.png',
-//     date: 'Joined in 2013',
-//     choiceName: 'Under 212.5',
-//     description: 'Primary Contact',
-//   },
-// ]
-
 export default class Poll extends React.Component {
   constructor(props) {
     // Initialize mutable state
@@ -79,7 +64,8 @@ export default class Poll extends React.Component {
         this.setState({
           poll: data.poll,
           choices: data.choices,
-          submitted: data.voted
+          submitted: data.voted,
+          selection: data.selection
         });
       })
       .catch((error) => console.log(error));
@@ -92,6 +78,8 @@ export default class Poll extends React.Component {
 
   handleSubmit() {
     const vote_url = this.state.vote_url;
+    const choice = this.state.selection;
+    const cur_user = this.state.user;
 
     console.log('submitted vote');
 
@@ -102,14 +90,19 @@ export default class Poll extends React.Component {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        user_id: cur_user
+        user_id: cur_user,
+        selection: choice 
       }),
       credentials: 'same-origin' 
     })
-
-    this.setState({
-      submitted: 'true'
-    });
+    .then((response) => {
+      console.log(response);
+      if (!response.ok) throw Error(response.statusText);
+      this.setState({
+        submitted: true
+      });
+    })
+    .catch((error) => console.log(error));
 
   }
 
@@ -151,8 +144,6 @@ export default class Poll extends React.Component {
                 <Card.Content>
                     <>
                       <Card.Header>{card.choiceName}</Card.Header>
-                      {/* <Card.Meta>{card.date}</Card.Meta> */}
-                      {/* <Card.Description>{card.description}</Card.Description> */}
                     </>
                 </Card.Content>
 
