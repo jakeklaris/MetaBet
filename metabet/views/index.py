@@ -3,17 +3,17 @@ Insta485 index (main) view.
 URLs include:
 /
 """
-from asyncore import poll
-from crypt import methods
-from curses import meta
 import re
 import flask
 import flask_login
-from mysqlx import SqlResult
 import metabet
 from werkzeug.security import generate_password_hash, check_password_hash
 from metabet.model import get_db
 from datetime import date, datetime
+
+@metabet.app.route('/profile')
+def show_profile():
+    return flask.render_template('profile.html')
 
 @metabet.app.route('/')
 def show_index():
@@ -43,6 +43,8 @@ def show_add_poll():
 @metabet.app.route('/poll', methods=['POST'])
 def post_poll():
     poll_date = datetime.strptime(flask.request.form['poll_date'], '%Y-%m-%d')
+    end_time = datetime.strptime(flask.request.form['end_time'], '%Y-%m-%dT%H:%M')
+
     description = flask.request.form['description']
     replace = True if flask.request.form.get('replace') else False
 
@@ -63,7 +65,7 @@ def post_poll():
         delete_poll(poll_date)
 
     # add poll to db
-    add_poll(poll_date, description)
+    add_poll(poll_date, description, end_time)
 
     # add choices to db
     add_choices(poll_date, choices)
@@ -125,10 +127,10 @@ def show_vote():
     return flask.render_template('vote.html', **context)
 
 # ROUTE for user votes -- POSSIBLY AN API
-@metabet.app.route('/vote', methods=['POST'])
-def post_vote():
-    context = {}
-    return flask.render_template('vote.html', **context)
+# @metabet.app.route('/vote', methods=['POST'])
+# def post_vote():
+#     context = {}
+#     return flask.render_template('vote.html', **context)
 
 def get_num_nfts(user_id):
     conn = get_db()
@@ -150,9 +152,9 @@ def add_owner(user, hashed_password, num_owns=1):
     query = 'INSERT INTO owners (`user_id`,`password`,`num_owns`) VALUES ({},{},{})'.format(sqlify(user),sqlify(hashed_password),num_owns)
     conn.execute(query)
 
-def add_poll(date, description):
+def add_poll(date, description, end_time):
     # TODO: add entry to poll db with date=date, description=description, correct=null
-    query = "INSERT INTO polls (`poll_date`, `description`) VALUES ({},{})".format(sqlify(date), sqlify(description))
+    query = "INSERT INTO polls (`poll_date`, `description`, `end_time`) VALUES ({},{},{})".format(sqlify(date), sqlify(description), sqlify(end_time))
     conn = get_db()
     conn.execute(query)
     print("Added poll for date: ".format(date))
@@ -173,19 +175,6 @@ def add_choices(date, choices):
         print("Added choice {} for poll on date: {}".format(choice, date))
 
 
-def get_choices(date=datetime.date(datetime.now())):
-    query = 'SELECT c.choice FROM polls p, choices c WHERE p.poll_date = {} AND p.poll_date = c.poll_date'.format(sqlify(date))
-
-    conn = get_db()
-    result = conn.execute(query)
-
-    choices = []
-
-    for choice in result:
-        choices.append(choice[0])
-
-    return choices
-
 def add_correct_choice(date,answer):
     query = "UPDATE polls SET correct_answer = {} WHERE poll_date = {}".format(sqlify(answer), sqlify(date))
     conn = get_db()
@@ -202,3 +191,4 @@ def add_user_vote(user_id, choice):
 
 def sqlify(word):
     return '\'' + str(word) + '\''
+

@@ -13,8 +13,15 @@
         {% endwith %}
         <form method="POST" action="/poll">
             <div class="field">
+                <label for='html'>Poll Date</label>
                 <div class="control">
                     <input class="input is-large" type="date" id="poll_date" name="poll_date" value="2022-09-29" min="2022-01-01" max="2024-12-31">
+                </div>
+            </div>
+            <div class="field">
+                <label for='html'>Poll End Time</label>
+                <div class="control">
+                    <input class="input is-large" type="datetime-local" id="end_time" name="end_time" value="2022-09-29" min="2022-01-01" max="2024-12-31">
                 </div>
             </div>
             <div class="field">
