@@ -4,6 +4,7 @@ from datetime import datetime
 from metabet.model import get_db
 from metabet.views.index import sqlify
 
+# Return JSON with information on current day's poll
 @metabet.app.route('/api/vote/<user_id>/', methods=['GET'])
 def get_poll(user_id):
     print(user_id)
@@ -33,6 +34,7 @@ def get_poll(user_id):
     return flask.jsonify(**context), 200
 
 
+# Post user's vote on current day's poll to db 
 @metabet.app.route('/api/votes/', methods=['POST'])
 def user_vote():
     data = flask.request.get_json()
@@ -41,14 +43,12 @@ def user_vote():
     context = {}
     return flask.jsonify(**context), 200
 
+# Retrieve poll from db
 def get_db_poll(date=datetime.date(datetime.now())):
     query = 'SELECT * FROM polls p WHERE p.poll_date = {}'.format(sqlify(date))
 
     conn = get_db()
     result = conn.execute(query)
-
-
-    # use arrow to get date into right format
 
     poll = {}
     for cur in result:
@@ -61,7 +61,7 @@ def get_db_poll(date=datetime.date(datetime.now())):
 
     return poll
 
-
+# Get choices for this day's poll
 def get_choices(date=datetime.date(datetime.now())):
     query = 'SELECT c.choice FROM polls p, choices c WHERE p.poll_date = {} AND p.poll_date = c.poll_date'.format(sqlify(date))
 
@@ -75,12 +75,13 @@ def get_choices(date=datetime.date(datetime.now())):
 
     return choices
 
+# Add user vote to db for specified day's poll
 def add_vote(user_id, vote, date=datetime.date(datetime.now())):
     query = 'INSERT INTO votes VALUES ({},{},{})'.format(sqlify(user_id), sqlify(date), sqlify(vote))
     conn = get_db()
     conn.execute(query)
     
-
+# Retrieve whether specified user has voted in day's poll from db
 def has_voted(user_id, date=datetime.date(datetime.now())):
     query = 'SELECT count(*), v.choice FROM votes v WHERE v.user_id = {} AND v.vote_date = {}'.format(sqlify(user_id), sqlify(date))
 

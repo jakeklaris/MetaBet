@@ -2,36 +2,25 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { Button, Card, Divider, Image, Placeholder } from 'semantic-ui-react'
 import moment from 'moment';
-import { now } from 'moment';
-
-// FIX TIME ZONES!!!!
-
-// const poll = {
-//   date: 'September 29, 2022',
-//   description: 'Over/Under Heat Game',
-//   endTime: '2022-04-06 11:44:10', 
-//   numChoices: 2
-// }
 
 export default class Poll extends React.Component {
   constructor(props) {
     // Initialize mutable state
     super(props);
     this.state = { 
-      pollDate: false, 
-      choices: [], 
-      description: '', 
-      endTime: '', 
-      pollEnded: false, 
-      selection: 'Over 212.5', 
-      submitted: false,
+      pollDate: false, // Date of poll (default to false for render sake)
+      choices: [], // Choices for a given poll
+      description: '', // Description of poll ex. Over/Under Heat Game
+      endTime: '', // Time at which poll closes (EST Time)
+      pollEnded: false, // Whether the poll has ended (dependent on endTime)
+      selection: 'Over 212.5', // Logged in user's selection on the poll 
+      submitted: false, // Whether the user has submitted the poll
       poll: {
         date: false
       },
-      choices: [],
-      user: 'jake',
-      vote_url: '/api/votes/',
-      get_vote_url: '/api/vote/'
+      user: 'jake', // logged in user's id
+      vote_url: '/api/votes/', // url for GET vote page
+      get_vote_url: '/api/vote/' // url for POST user vote
     };
     this.handleChoiceSelection = this.handleChoiceSelection.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
@@ -43,14 +32,14 @@ export default class Poll extends React.Component {
     const url = this.state.get_vote_url;
     const cur_user = this.state.user;
 
-    // Set up 10 second timer to check for current time
+    // Set up 10 second timer to check for current time and whether the poll has closed
     this.checkTime();
     const interval = setInterval(this.checkTime, 10000);
     this.setState({
       time_interval: interval
     });
 
-    // Call REST API to get the post's information
+    // Call REST API to get the current day's poll information
     fetch(url + cur_user, {
       credentials: 'same-origin' 
     })
@@ -72,6 +61,7 @@ export default class Poll extends React.Component {
   }
 
   componentWillUnmount() {
+    // Clear the time interval
     const int = this.state.time_interval;
     clearInterval(int);
   }
@@ -83,7 +73,7 @@ export default class Poll extends React.Component {
 
     console.log('submitted vote');
 
-    // TODO: POST /api/v1/vote/
+    // POST /api/vote/ --> save user's vote to db
     fetch(vote_url, { 
       method: 'POST',
       headers: {
@@ -167,3 +157,12 @@ export default class Poll extends React.Component {
   }
 }
 
+
+// HARD CODED REFERENCE:
+
+// const poll = {
+//   date: 'September 29, 2022',
+//   description: 'Over/Under Heat Game',
+//   endTime: '2022-04-06 11:44:10', 
+//   numChoices: 2
+// }

@@ -3,29 +3,31 @@ Insta485 index (main) view.
 URLs include:
 /
 """
-import re
 import flask
-import flask_login
 import metabet
 from werkzeug.security import generate_password_hash, check_password_hash
 from metabet.model import get_db
 from datetime import date, datetime
 
+# Return templated profile page
 @metabet.app.route('/profile')
 def show_profile():
     return flask.render_template('profile.html')
 
+# Index Page: Reroute to poll page
 @metabet.app.route('/')
 def show_index():
     """Display / route."""
     print(get_db())
-    return flask.redirect(flask.url_for('post_login'))
+    return flask.redirect(flask.url_for('show_vote'))
 
+# Login Page
 @metabet.app.route('/login', methods=['GET'])
 def show_login():
     context = {}
     return flask.render_template("login.html", **context)
 
+# POST login
 @metabet.app.route('/login', methods=['POST'])
 def post_login():
     # TODO: make sure user can log in --> has correct password and still owns nft
@@ -33,15 +35,16 @@ def post_login():
 
     return flask.redirect(flask.url_for('show_vote'))
 
+# Return add_poll page 
 @metabet.app.route('/poll', methods=['GET'])
 def show_add_poll():    
 
     return flask.render_template('add_poll.html')
 
-
-
+# POST new poll to db
 @metabet.app.route('/poll', methods=['POST'])
 def post_poll():
+    # Retrieve data from submitted poll html form
     poll_date = datetime.strptime(flask.request.form['poll_date'], '%Y-%m-%d')
     end_time = datetime.strptime(flask.request.form['end_time'], '%Y-%m-%dT%H:%M')
 
@@ -73,6 +76,7 @@ def post_poll():
     flask.flash('Poll Added!')
     return flask.redirect(flask.url_for('show_add_poll'))
 
+# Add correct answer for a given poll to poll db
 @metabet.app.route('/add_answer', methods=['POST'])
 def post_correct_answer():
     poll_date = datetime.strptime(flask.request.form['poll_date'], '%Y-%m-%d')
@@ -81,8 +85,8 @@ def post_correct_answer():
 
     return flask.redirect(flask.url_for('show_add_poll'))
 
+# Check if poll exists for specified day
 def poll_exists(date):
-    # check if poll exists for this day 
     query = 'SELECT COUNT(*) from polls WHERE poll_date = {}'.format(sqlify(date))
     conn = get_db()
     result = conn.execute(query)
@@ -94,10 +98,12 @@ def poll_exists(date):
     
     return exists
 
+# Return signup page
 @metabet.app.route('/signup')
 def show_signup():
     return flask.render_template('signup.html')
 
+# POST new signup
 @metabet.app.route('/signup', methods=['POST'])
 def signup():
 
@@ -120,18 +126,13 @@ def signup():
 
     return flask.redirect(flask.url_for('show_login'))
 
-# ROUTE to show the user the vote -- POSSIBLY AN API
+# Return user poll page (mostly filled with front-end React)
 @metabet.app.route('/vote', methods=['GET'])
 def show_vote():
     context = {}
     return flask.render_template('vote.html', **context)
 
-# ROUTE for user votes -- POSSIBLY AN API
-# @metabet.app.route('/vote', methods=['POST'])
-# def post_vote():
-#     context = {}
-#     return flask.render_template('vote.html', **context)
-
+# Return number of nfts that current user owns from nft table
 def get_num_nfts(user_id):
     conn = get_db()
     query = 'SELECT COUNT(*) FROM owners o, nfts n WHERE o.user_id = n.owner AND o.user_id = {}'.format(sqlify(user_id))
@@ -142,23 +143,26 @@ def get_num_nfts(user_id):
 
     return owns
 
+# Add entry to nft owner table 
 def add_nft_owner(nft_id, owner, position):
     conn = get_db()
     query = 'INSERT INTO nfts VALUES({},{},{})'.format(sqlify(nft_id), sqlify(owner), sqlify(position))
     conn.execute(query)
 
+# Add user to users (accounts) table
 def add_owner(user, hashed_password, num_owns=1):
     conn = get_db()
     query = 'INSERT INTO owners (`user_id`,`password`,`num_owns`) VALUES ({},{},{})'.format(sqlify(user),sqlify(hashed_password),num_owns)
     conn.execute(query)
 
+# Add specified poll to poll db
 def add_poll(date, description, end_time):
-    # TODO: add entry to poll db with date=date, description=description, correct=null
     query = "INSERT INTO polls (`poll_date`, `description`, `end_time`) VALUES ({},{},{})".format(sqlify(date), sqlify(description), sqlify(end_time))
     conn = get_db()
     conn.execute(query)
     print("Added poll for date: ".format(date))
 
+# Delete poll with specified date from polls db
 def delete_poll(date):
     query = "DELETE from polls WHERE poll_date = {} ".format(sqlify(date))
     conn = get_db()
@@ -166,8 +170,8 @@ def delete_poll(date):
     print("Deleted poll for date: ".format(date))
 
 
+# Add specified choices to choices db table with poll_date == date
 def add_choices(date, choices):
-    # TODO: adds entry to choice db with date=date, choice=choice for choice in choices
     conn = get_db()
     for choice in choices:
         query = 'INSERT INTO choices VALUES ({},{})'.format(sqlify(date),sqlify(choice))
@@ -175,20 +179,14 @@ def add_choices(date, choices):
         print("Added choice {} for poll on date: {}".format(choice, date))
 
 
+# Add correct choice for specified date's poll to polls db
 def add_correct_choice(date,answer):
     query = "UPDATE polls SET correct_answer = {} WHERE poll_date = {}".format(sqlify(answer), sqlify(date))
     conn = get_db()
     conn.execute(query)
     print("Added answer: {} to poll on date: {}".format(answer, date))
 
-def add_user_vote(user_id, choice):
-    now = datetime.date(datetime.now())
-    query = 'INSERT INTO votes VALUES({},{},{})'.format(sqlify(user_id), sqlify(now), sqlify(choice))
-
-    conn = get_db()
-    conn.execute(query)
-
-
+# Add quotes to values for MySQL (neccesary to insert into db)
 def sqlify(word):
     return '\'' + str(word) + '\''
 
