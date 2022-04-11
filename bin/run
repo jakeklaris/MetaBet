@@ -6,7 +6,8 @@
 set -Eeuo pipefail
 set -x
 
-
+# update front-end
+npx webpack
 
 # get flask ready
 export FLASK_ENV=development
