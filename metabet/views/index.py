@@ -46,7 +46,9 @@ def show_add_poll():
 def post_poll():
     # Retrieve data from submitted poll html form
     poll_date = datetime.strptime(flask.request.form['poll_date'], '%Y-%m-%d')
-    end_time = datetime.strptime(flask.request.form['end_time'], '%Y-%m-%dT%H:%M')
+    #Adding eastern timezone to the end time
+    form_end_time = flask.request.form['end_time'] + " EST"
+    end_time = datetime.strptime(form_end_time, '%Y-%m-%dT%H:%M %Z')
 
     description = flask.request.form['description']
     replace = True if flask.request.form.get('replace') else False
