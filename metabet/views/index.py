@@ -18,7 +18,7 @@ def show_profile():
 @metabet.app.route('/')
 def show_index():
     """Display / route."""
-    print(get_db())
+
     return flask.redirect(flask.url_for('show_vote'))
 
 # Login Page
@@ -60,18 +60,26 @@ def post_poll():
         if choice != '':
             choices.append(choice)
 
-    # check if poll exists
-    if poll_exists(poll_date):
-        if not replace:
-            flask.flash('Poll already exists for this date. Try Again.')
-            return flask.redirect(flask.url_for('post_poll'))
+    try:
+        # check if poll exists
+        if poll_exists(poll_date):
+            if not replace:
+                flask.flash('Poll already exists for this date. Try Again.')
+                return flask.redirect(flask.url_for('post_poll'))
+            delete_poll(poll_date)
+
+        # add poll to db
+        add_poll(poll_date, description, end_time)
+    except Exception:
+        flask.flash('Error Adding Poll: Database Error')
+        return flask.redirect(flask.url_for('show_add_poll'))
+
+    try:
+        # add choices to db
+        add_choices(poll_date, choices)
+    except Exception:
         delete_poll(poll_date)
-
-    # add poll to db
-    add_poll(poll_date, description, end_time)
-
-    # add choices to db
-    add_choices(poll_date, choices)
+        flask.flash('Error Adding Poll Choices to Database. Poll was not added.')
 
     flask.flash('Poll Added!')
     return flask.redirect(flask.url_for('show_add_poll'))
@@ -81,7 +89,10 @@ def post_poll():
 def post_correct_answer():
     poll_date = datetime.strptime(flask.request.form['poll_date'], '%Y-%m-%d')
     correct = flask.request.form['correct']
-    add_correct_choice(poll_date,correct)
+    try:
+        add_correct_choice(poll_date,correct)
+    except:
+        flask.flash('Error adding correct choice to Database')
 
     return flask.redirect(flask.url_for('show_add_poll'))
 
@@ -117,13 +128,20 @@ def signup():
         return flask.redirect(flask.url_for('show_signup'))
 
     # check # of nfts that user owns 
-    num_owns = get_num_nfts(user_id)
+    try:
+        num_owns = get_num_nfts(user_id)
+    except Exception:
+        flask.flash('Unable to retrieve number of nfts owned from database')
+        return flask.redirect(flask.url_for('show_login'))
     if num_owns == 0:
         flask.flash('This Metamask ID does not own a Metabet NFT. Please Try Again')
         return flask.redirect(flask.url_for('show_signup'))
 
-    add_owner(user=user_id, hashed_password=generate_password_hash(password, method='sha256'), num_owns=num_owns)
-
+    try:
+        add_owner(user=user_id, hashed_password=generate_password_hash(password, method='sha256'), num_owns=num_owns)
+    except Exception:
+        flask.flash('Error adding user to database')
+        
     return flask.redirect(flask.url_for('show_login'))
 
 # Return user poll page (mostly filled with front-end React)

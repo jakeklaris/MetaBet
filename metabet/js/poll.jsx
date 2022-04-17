@@ -8,19 +8,20 @@ export default class Poll extends React.Component {
     // Initialize mutable state
     super(props);
     this.state = { 
-      pollDate: false, // Date of poll (default to false for render sake)
       choices: [], // Choices for a given poll
-      description: '', // Description of poll ex. Over/Under Heat Game
-      endTime: '', // Time at which poll closes (EST Time)
       pollEnded: false, // Whether the poll has ended (dependent on endTime)
       selection: 'Over 212.5', // Logged in user's selection on the poll 
       submitted: false, // Whether the user has submitted the poll
       poll: {
-        date: false
+        date: false // Date of poll (default to false for render sake)
       },
       user: 'jake', // logged in user's id
       vote_url: '/api/votes/', // url for GET vote page
-      get_vote_url: '/api/vote/' // url for POST user vote
+      get_vote_url: '/api/vote/', // url for POST user vote,
+      error: { // whether there was an error in backend request
+        exists: false,
+        message: ''
+      }
     };
     this.handleChoiceSelection = this.handleChoiceSelection.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
@@ -57,7 +58,15 @@ export default class Poll extends React.Component {
           selection: data.selection
         });
       })
-      .catch((error) => console.log(error));
+      .catch((e) => {
+        this.setState({
+          error: {
+            exists: true,
+            message: 'Error loading poll'
+          }
+        });
+        console.log(e);
+      });
   }
 
   componentWillUnmount() {
@@ -92,7 +101,15 @@ export default class Poll extends React.Component {
         submitted: true
       });
     })
-    .catch((error) => console.log(error));
+    .catch((error) => {
+      this.setState({
+        error: {
+          exists: true,
+          message: 'Error Submitting User Vote. Please Try Again.'
+        }      
+      })
+      console.log(error);
+    });
 
   }
 
@@ -118,8 +135,12 @@ export default class Poll extends React.Component {
     const submitted = this.state.submitted;
     const poll = this.state.poll;
     const choices = this.state.choices;
+    const error = this.state.error
 
-    if (poll.date) {
+    if (error.exists) {
+      return <h1>{error.message}</h1>
+    }
+    else if (poll.date) {
       return (
         <>
           <h1>{moment(poll.date).format("MMMM Do, YYYY")}</h1>

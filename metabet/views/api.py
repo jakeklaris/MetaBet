@@ -11,7 +11,14 @@ def get_poll(user_id):
     context = {}
     date=datetime.date(datetime.now())
     
-    choices = get_choices(date)
+    try:
+        choices = get_choices(date)
+    except Exception:
+        context = {
+            "message": "Unable to retrieve poll",
+            "status_code": 400
+        }
+        return flask.jsonify(**context), 400
 
     return_choices = []
     for choice in choices:
@@ -21,15 +28,28 @@ def get_poll(user_id):
         }
         return_choices.append(cur_choice)
     
-
+    
     context['choices'] = return_choices
-    context['poll'] = get_db_poll(date)
     context['poll']['numChoices'] = len(return_choices)
 
-    # check if user has voted
+    try:
+        context['poll'] = get_db_poll(date)
+    except Exception:
+        context = {
+            "message": "Unable to retrieve poll",
+            "status_code": 400
+        }
+        return flask.jsonify(**context), 400  
 
-    context['user_id'] = user_id
-    context['voted'], context['selection'] = has_voted(user_id)
+    try:
+        context['user_id'] = user_id
+        context['voted'], context['selection'] = has_voted(user_id)
+    except Exception:
+        context = {
+            "message": "Unable to retrieve user vote",
+            "status_code": 400
+        }
+        return flask.jsonify(**context), 400        
 
     return flask.jsonify(**context), 200
 
@@ -38,7 +58,15 @@ def get_poll(user_id):
 @metabet.app.route('/api/votes/', methods=['POST'])
 def user_vote():
     data = flask.request.get_json()
-    add_vote(data['user_id'], data['selection'])
+
+    try:
+        add_vote(data['user_id'], data['selection'])
+    except Exception:
+        context = {
+            "message": "Error submitting user vote",
+            "status_code": 400
+        }
+        return flask.jsonify(**context), 400
 
     context = {}
     return flask.jsonify(**context), 200
