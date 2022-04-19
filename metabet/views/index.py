@@ -49,7 +49,7 @@ def post_poll():
     timezone = pytz.timezone("America/New_York")
     # Retrieve data from submitted poll html form
     poll_date = datetime.strptime(flask.request.form['poll_date'], '%Y-%m-%d')
-    #Adding eastern timezone to the end time
+    #Localizing end time to EST
     end_time = datetime.strptime(flask.request.form['end_time'], '%Y-%m-%dT%H:%M')
     end_time = timezone.localize(end_time)
     description = flask.request.form['description']
