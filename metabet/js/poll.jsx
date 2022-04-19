@@ -122,7 +122,7 @@ export default class Poll extends React.Component {
     if (poll.date) {
       return (
         <>
-          <h1>{moment(poll.date).format("MMMM Do, YYYY")}</h1>
+          <h1>{moment(poll.endTime).format("MMMM Do, YYYY")}</h1>
           <Divider />
           <h3>{poll.description}</h3>
           <Divider />
