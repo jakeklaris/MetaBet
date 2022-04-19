@@ -19,19 +19,11 @@ def get_poll(user_id):
             "status_code": 400
         }
         return flask.jsonify(**context), 400
-
-    return_choices = []
-    for choice in choices:
-        cur_choice = {
-            'choiceName': choice,
-            'avatar': '../static/images/heat_image.png'
-        }
-        return_choices.append(cur_choice)
     
+    context['poll'] = {}
+    context['choices'] = choices
+    context['poll']['numChoices'] = len(choices)
     
-    context['choices'] = return_choices
-    context['poll']['numChoices'] = len(return_choices)
-
     try:
         context['poll'] = get_db_poll(date)
     except Exception:
@@ -91,7 +83,7 @@ def get_db_poll(date=datetime.date(datetime.now())):
 
 # Get choices for this day's poll
 def get_choices(date=datetime.date(datetime.now())):
-    query = 'SELECT c.choice FROM polls p, choices c WHERE p.poll_date = {} AND p.poll_date = c.poll_date'.format(sqlify(date))
+    query = 'SELECT c.choice, c.s3_filename FROM polls p, choices c WHERE p.poll_date = {} AND p.poll_date = c.poll_date'.format(sqlify(date))
 
     conn = get_db()
     result = conn.execute(query)
@@ -99,7 +91,10 @@ def get_choices(date=datetime.date(datetime.now())):
     choices = []
 
     for choice in result:
-        choices.append(choice[0])
+        choices.append({
+            'choiceName': choice[0],
+            'avatar': choice[1]
+        })
 
     return choices
 

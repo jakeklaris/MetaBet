@@ -3,6 +3,7 @@ USE metabet;
 CREATE TABLE `choices` (
   `poll_date` date NOT NULL,
   `choice` varchar(50) NOT NULL,
+  `s3_filename` varchar(100) DEFAULT NULL,
   PRIMARY KEY (`poll_date`,`choice`)
 );
 CREATE TABLE `votes` (

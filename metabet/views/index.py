@@ -3,11 +3,16 @@ Insta485 index (main) view.
 URLs include:
 /
 """
+import os
+import pathlib
+from tkinter import E
 import flask
 import metabet
 from werkzeug.security import generate_password_hash, check_password_hash
 from metabet.model import get_db
-from datetime import date, datetime
+from datetime import datetime
+from metabet.views.s3_functions import upload_files, CHOICE_IMAGE_BUCKET, UPLOAD_FOLDER
+from werkzeug.utils import secure_filename
 
 # Return templated profile page
 @metabet.app.route('/profile')
@@ -54,11 +59,23 @@ def post_poll():
     choices = []
     choice_name = 'choice'
 
-    for i in range(1,6):
-        form_name = choice_name + str(i)
-        choice = flask.request.form[form_name]
-        if choice != '':
-            choices.append(choice)
+    choice_image_files = []
+
+    try:
+        for i in range(1,6):
+            form_name = choice_name + str(i)
+            choice = flask.request.form[form_name]
+            if choice != '':
+                choices.append(choice)
+                file_name = 'file' + str(i)
+                img_file = flask.request.files[file_name]
+                new_file_name = secure_filename(img_file.filename + str(poll_date))
+                uploads_path = pathlib.Path("metabet")/"static"/UPLOAD_FOLDER
+                img_file.save(os.path.join(uploads_path, new_file_name))
+                choice_image_files.append(f"{uploads_path}/{new_file_name}")
+    except Exception:
+        flask.flash("Error adding choices/images to database/S3. Try Again.")
+        return flask.redirect(flask.url_for('show_add_poll'))
 
     try:
         # check if poll exists
@@ -74,12 +91,8 @@ def post_poll():
         flask.flash('Error Adding Poll: Database Error')
         return flask.redirect(flask.url_for('show_add_poll'))
 
-    try:
-        # add choices to db
-        add_choices(poll_date, choices)
-    except Exception:
-        delete_poll(poll_date)
-        flask.flash('Error Adding Poll Choices to Database. Poll was not added.')
+
+    add_choices(poll_date, choices, choice_image_files)
 
     flask.flash('Poll Added!')
     return flask.redirect(flask.url_for('show_add_poll'))
@@ -141,7 +154,7 @@ def signup():
         add_owner(user=user_id, hashed_password=generate_password_hash(password, method='sha256'), num_owns=num_owns)
     except Exception:
         flask.flash('Error adding user to database')
-        
+
     return flask.redirect(flask.url_for('show_login'))
 
 # Return user poll page (mostly filled with front-end React)
@@ -189,13 +202,13 @@ def delete_poll(date):
 
 
 # Add specified choices to choices db table with poll_date == date
-def add_choices(date, choices):
+def add_choices(date, choices, choice_images):
     conn = get_db()
-    for choice in choices:
-        query = 'INSERT INTO choices VALUES ({},{})'.format(sqlify(date),sqlify(choice))
+    for i in range(len(choices)):
+        query = 'INSERT INTO choices VALUES ({},{},{})'.format(sqlify(date),sqlify(choices[i]),sqlify(choice_images[i]))
         conn.execute(query)
-        print("Added choice {} for poll on date: {}".format(choice, date))
-
+        print("Added choice {} for poll on date: {}".format(choices[i], date))
+    upload_files(choice_images, CHOICE_IMAGE_BUCKET)
 
 # Add correct choice for specified date's poll to polls db
 def add_correct_choice(date,answer):
