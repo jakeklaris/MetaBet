@@ -3,11 +3,13 @@ Insta485 index (main) view.
 URLs include:
 /
 """
+from asyncore import poll
 import flask
 import metabet
 from werkzeug.security import generate_password_hash, check_password_hash
 from metabet.model import get_db
 from datetime import date, datetime
+import pytz
 
 # Return templated profile page
 @metabet.app.route('/profile')
@@ -44,10 +46,12 @@ def show_add_poll():
 # POST new poll to db
 @metabet.app.route('/poll', methods=['POST'])
 def post_poll():
+    timezone = pytz.timezone("America/New_York")
     # Retrieve data from submitted poll html form
     poll_date = datetime.strptime(flask.request.form['poll_date'], '%Y-%m-%d')
+    #Localizing end time to EST
     end_time = datetime.strptime(flask.request.form['end_time'], '%Y-%m-%dT%H:%M')
-
+    end_time = timezone.localize(end_time)
     description = flask.request.form['description']
     replace = True if flask.request.form.get('replace') else False
 
