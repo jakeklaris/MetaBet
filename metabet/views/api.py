@@ -3,6 +3,7 @@ import metabet
 from datetime import datetime
 from metabet.model import get_db
 from metabet.views.index import sqlify
+import pytz
 
 # Return JSON with information on current day's poll
 @metabet.app.route('/api/vote/<user_id>/', methods=['GET'])
@@ -69,14 +70,17 @@ def get_db_poll(date=datetime.date(datetime.now())):
 
     conn = get_db()
     result = conn.execute(query)
+    timezone = pytz.timezone("America/New_York")
 
     poll = {}
     for cur in result:
         poll = {
             'date': cur[0],
             'description': cur[1],
-            'endTime': cur[3]
+            'endTime': timezone.localize(cur[3])
         }
+        print("Get from DB")
+        print(cur[3])
         return poll
 
     return poll

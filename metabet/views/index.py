@@ -3,16 +3,17 @@ Insta485 index (main) view.
 URLs include:
 /
 """
-import os
-import pathlib
-from tkinter import E
 import flask
 import metabet
+import os
+import pathlib
 from werkzeug.security import generate_password_hash, check_password_hash
 from metabet.model import get_db
 from datetime import datetime
 from metabet.views.s3_functions import upload_files, CHOICE_IMAGE_BUCKET, UPLOAD_FOLDER
 from werkzeug.utils import secure_filename
+from datetime import date, datetime
+import pytz
 
 # Return templated profile page
 @metabet.app.route('/profile')
@@ -49,10 +50,12 @@ def show_add_poll():
 # POST new poll to db
 @metabet.app.route('/poll', methods=['POST'])
 def post_poll():
+    timezone = pytz.timezone("America/New_York")
     # Retrieve data from submitted poll html form
     poll_date = datetime.strptime(flask.request.form['poll_date'], '%Y-%m-%d')
+    #Localizing end time to EST
     end_time = datetime.strptime(flask.request.form['end_time'], '%Y-%m-%dT%H:%M')
-
+    end_time = timezone.localize(end_time)
     description = flask.request.form['description']
     replace = True if flask.request.form.get('replace') else False
 
