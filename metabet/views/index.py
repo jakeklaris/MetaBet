@@ -69,7 +69,7 @@ def post_poll():
                 choices.append(choice)
                 file_name = 'file' + str(i)
                 img_file = flask.request.files[file_name]
-                new_file_name = secure_filename(img_file.filename + str(poll_date))
+                new_file_name = secure_filename(img_file.filename)
                 uploads_path = pathlib.Path("metabet")/"static"/UPLOAD_FOLDER
                 img_file.save(os.path.join(uploads_path, new_file_name))
                 choice_image_files.append(f"{uploads_path}/{new_file_name}")

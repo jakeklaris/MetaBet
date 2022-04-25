@@ -1,7 +1,7 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import { Button, Card, Divider, Image, Placeholder } from 'semantic-ui-react'
 import moment from 'moment';
+import { Amplify, Auth, Storage , AmplifyS3Image ,  } from 'aws-amplify';
 
 export default class Poll extends React.Component {
   constructor(props) {
@@ -26,6 +26,18 @@ export default class Poll extends React.Component {
     this.handleChoiceSelection = this.handleChoiceSelection.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
     this.checkTime = this.checkTime.bind(this);
+
+    // Amplify.configure({
+    //   Auth: {
+    //       identityPoolId: 'us-east-1:c0022f66-7372-4e53-a314-2a17ba536933', //REQUIRED - Amazon Cognito Identity Pool ID
+    //       region: 'us-east-1' // REQUIRED - Amazon Cognito Region
+    //   },
+    //   Storage: {
+    //       AWSS3: {
+    //           bucket: 'metabet-choice-uploads' //REQUIRED -  Amazon S3 bucket name
+    //       }
+    //   }
+    // });
   }
 
   componentDidMount() {
@@ -137,6 +149,8 @@ export default class Poll extends React.Component {
     const choices = this.state.choices;
     const error = this.state.error
 
+    console.log(choices);
+
     if (error.exists) {
       return <h1>{error.message}</h1>
     }
@@ -150,7 +164,12 @@ export default class Poll extends React.Component {
           <Card.Group doubling itemsPerRow={poll.numChoices} stackable>
             {choices.map((card) => (
               <Card key={card.choiceName}>
-                <Image src={card.avatar} />
+                {/* <Image src={card.avatar} /> */}
+                {/* <AmplifyS3Image 
+                  imgKey='Oahu_Pic.jpeg'
+                  path='metabet/static/uploads'
+                  identityId='us-east-1:c0022f66-7372-4e53-a314-2a17ba536933'
+                /> */}
 
                 <Card.Content>
                     <>

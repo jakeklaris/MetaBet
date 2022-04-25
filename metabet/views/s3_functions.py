@@ -9,5 +9,5 @@ def upload_files(file_names, bucket):
     for file_name in file_names:
         object_name = file_name
         responses.append(s3_client.upload_file(file_name, bucket, object_name))
-    print("s3 responses: " +responses)
+
     return responses
