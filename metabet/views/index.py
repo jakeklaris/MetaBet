@@ -53,9 +53,17 @@ def post_poll():
     timezone = pytz.timezone("America/New_York")
     # Retrieve data from submitted poll html form
     poll_date = datetime.strptime(flask.request.form['poll_date'], '%Y-%m-%d')
-    #Localizing end time to EST
+
+    # Apr 27 830 PM CET (6 hours ahead of NY)
+
+    #  Localizing end time to EST
     end_time = datetime.strptime(flask.request.form['end_time'], '%Y-%m-%dT%H:%M')
-    end_time = timezone.localize(end_time)
+    print(end_time)
+    # end_time = timezone.localize(end_time)
+    # Apr 27 830 PM EST
+    # ALWAYS ENTER IN EST
+    print(end_time)
+
     description = flask.request.form['description']
     replace = True if flask.request.form.get('replace') else False
 
@@ -70,13 +78,14 @@ def post_poll():
             choice = flask.request.form[form_name]
             if choice != '':
                 choices.append(choice)
-                file_name = 'file' + str(i)
-                img_file = flask.request.files[file_name]
-                new_file_name = secure_filename(img_file.filename)
-                uploads_path = pathlib.Path("metabet")/"static"/UPLOAD_FOLDER
-                img_file.save(os.path.join(uploads_path, new_file_name))
-                choice_image_files.append(f"{uploads_path}/{new_file_name}")
-    except Exception:
+                # file_name = 'file' + str(i)
+                # img_file = flask.request.files[file_name]
+                # new_file_name = secure_filename(img_file.filename)
+                # uploads_path = pathlib.Path("metabet")/"static"/UPLOAD_FOLDER
+                # img_file.save(os.path.join(uploads_path, new_file_name))
+                # choice_image_files.append(f"{uploads_path}/{new_file_name}")
+    except Exception as e:
+        print(e)
         flask.flash("Error adding choices/images to database/S3. Try Again.")
         return flask.redirect(flask.url_for('show_add_poll'))
 

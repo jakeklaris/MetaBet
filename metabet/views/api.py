@@ -17,9 +17,9 @@ def get_poll(user_id):
     except Exception:
         context = {
             "message": "Unable to retrieve poll",
-            "status_code": 400
+            "status_code": 401
         }
-        return flask.jsonify(**context), 400
+        return flask.jsonify(**context), 401
     
     context['poll'] = {}
     context['choices'] = choices
@@ -30,9 +30,9 @@ def get_poll(user_id):
     except Exception:
         context = {
             "message": "Unable to retrieve poll",
-            "status_code": 400
+            "status_code": 402
         }
-        return flask.jsonify(**context), 400  
+        return flask.jsonify(**context), 402  
 
     try:
         context['user_id'] = user_id
@@ -40,9 +40,9 @@ def get_poll(user_id):
     except Exception:
         context = {
             "message": "Unable to retrieve user vote",
-            "status_code": 400
+            "status_code": 403
         }
-        return flask.jsonify(**context), 400        
+        return flask.jsonify(**context), 403        
 
     return flask.jsonify(**context), 200
 
