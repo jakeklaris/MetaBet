@@ -1,7 +1,8 @@
 import React from 'react';
 import { Button, Card, Divider, Image, Placeholder } from 'semantic-ui-react'
 import moment from 'moment';
-import { Amplify, Auth, Storage , AmplifyS3Image ,  } from 'aws-amplify';
+import { Amplify, Auth, Storage , AmplifyS3Image } from 'aws-amplify';
+import { ConnectMetamaskButtonComponent } from './Metamask';
 
 export default class Poll extends React.Component {
   constructor(props) {
@@ -150,11 +151,13 @@ export default class Poll extends React.Component {
     const error = this.state.error
 
     console.log(choices);
+    console.log(poll.endTime);
 
     if (error.exists) {
       return <h1>{error.message}</h1>
     }
     else if (poll.date) {
+      <ConnectMetamaskButtonComponent />
       return (
         <>
           <h1>{moment(poll.endTime).format("MMMM Do, YYYY")}</h1>
@@ -193,7 +196,12 @@ export default class Poll extends React.Component {
         </>
       )
     }
-    return <h1>No Open Polls</h1>
+    return (
+      <>  
+        <ConnectMetamaskButtonComponent />
+        <h1>No Open Polls</h1>
+      </>
+    )
   }
 }
 
