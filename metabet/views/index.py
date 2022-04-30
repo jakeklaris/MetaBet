@@ -136,6 +136,11 @@ def show_vote():
     context = {}
     return flask.render_template('vote.html', **context)
 
+@metabet.app.route('/rules', methods=['GET'])
+def show_rules():
+    context = {}
+    return flask.render_template('rules.html', **context)
+
 # Return number of nfts that current user owns from nft table
 def get_num_nfts(user_id):
     conn = get_db()
