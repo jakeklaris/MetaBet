@@ -36,8 +36,6 @@ def show_login():
 # POST login
 @metabet.app.route('/login', methods=['POST'])
 def post_login():
-    # TODO: make sure user can log in --> has correct password and still owns nft
-    # TODO: also retrieve whether they can vote 
 
     return flask.redirect(flask.url_for('show_vote'))
 
@@ -50,19 +48,11 @@ def show_add_poll():
 # POST new poll to db
 @metabet.app.route('/poll', methods=['POST'])
 def post_poll():
-    timezone = pytz.timezone("America/New_York")
     # Retrieve data from submitted poll html form
     poll_date = datetime.strptime(flask.request.form['poll_date'], '%Y-%m-%d')
 
-    # Apr 27 830 PM CET (6 hours ahead of NY)
-
     #  Localizing end time to EST
     end_time = datetime.strptime(flask.request.form['end_time'], '%Y-%m-%dT%H:%M')
-    print(end_time)
-    # end_time = timezone.localize(end_time)
-    # Apr 27 830 PM EST
-    # ALWAYS ENTER IN EST
-    print(end_time)
 
     description = flask.request.form['description']
     replace = True if flask.request.form.get('replace') else False
@@ -78,7 +68,7 @@ def post_poll():
             choice = flask.request.form[form_name]
             if choice != '':
                 choices.append(choice)
-                # file_name = 'file' + str(i)
+                # TODO: file_name = 'file' + str(i)
                 # img_file = flask.request.files[file_name]
                 # new_file_name = secure_filename(img_file.filename)
                 # uploads_path = pathlib.Path("metabet")/"static"/UPLOAD_FOLDER
@@ -104,8 +94,13 @@ def post_poll():
         return flask.redirect(flask.url_for('show_add_poll'))
 
 
-    add_choices(poll_date, choices, choice_image_files)
-
+    try:
+        add_choices(poll_date, choices, choice_image_files)
+    except Exception:
+        delete_poll(poll_date)
+        flask.flash("Error adding choices/images to database/S3. Try Again.")
+        return flask.redirect(flask.url_for('show_add_poll'))
+    
     flask.flash('Poll Added!')
     return flask.redirect(flask.url_for('show_add_poll'))
 
@@ -217,10 +212,12 @@ def delete_poll(date):
 def add_choices(date, choices, choice_images):
     conn = get_db()
     for i in range(len(choices)):
-        query = 'INSERT INTO choices VALUES ({},{},{})'.format(sqlify(date),sqlify(choices[i]),sqlify(choice_images[i]))
+        # query = 'INSERT INTO choices VALUES ({},{},{})'.format(sqlify(date),sqlify(choices[i]),sqlify(choice_images[i]))
+        query = 'INSERT INTO choices VALUES ({},{},{})'.format(sqlify(date),sqlify(choices[i]),sqlify('test_img.jpg'))
+
         conn.execute(query)
         print("Added choice {} for poll on date: {}".format(choices[i], date))
-    upload_files(choice_images, CHOICE_IMAGE_BUCKET)
+    # TODO: upload_files(choice_images, CHOICE_IMAGE_BUCKET)
 
 # Add correct choice for specified date's poll to polls db
 def add_correct_choice(date,answer):

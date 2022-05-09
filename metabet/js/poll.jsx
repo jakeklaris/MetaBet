@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button, Card, Divider, Image, Placeholder } from 'semantic-ui-react'
 import moment from 'moment';
-import { Amplify, Auth, Storage , AmplifyS3Image } from 'aws-amplify';
+// import { Amplify, Auth, Storage , AmplifyS3Image } from 'aws-amplify';
 import { ConnectMetamaskButtonComponent } from './Metamask';
 
 export default class Poll extends React.Component {
@@ -75,7 +75,7 @@ export default class Poll extends React.Component {
         this.setState({
           error: {
             exists: true,
-            message: 'Error loading poll'
+            message: e.message
           }
         });
         console.log(e);
@@ -102,7 +102,7 @@ export default class Poll extends React.Component {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        user_id: cur_user,
+        user_id: cur_user, //TODO: set equal to logged in metamask 
         selection: choice 
       }),
       credentials: 'same-origin' 
@@ -160,7 +160,7 @@ export default class Poll extends React.Component {
       <ConnectMetamaskButtonComponent />
       return (
         <>
-          <h1>{moment(poll.endTime).format("MMMM Do, YYYY")}</h1>
+          <h1>{moment.utc(poll.date).format("MMMM Do, YYYY")}</h1>
           <Divider />
           <h3>{poll.description}</h3>
           <Divider />
@@ -204,13 +204,3 @@ export default class Poll extends React.Component {
     )
   }
 }
-
-
-// HARD CODED REFERENCE:
-
-// const poll = {
-//   date: 'September 29, 2022',
-//   description: 'Over/Under Heat Game',
-//   endTime: '2022-04-06 11:44:10', 
-//   numChoices: 2
-// }
