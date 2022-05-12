@@ -17,21 +17,17 @@
                 <div class="container">
                     <div id="navbarMenuHeroA" class="navbar-menu">
                         <div class="navbar-end">
-                            <a href="{{ url_for('show_profile') }}" class="navbar-item">
-                                Profile
+                            <a href="{{ url_for('show_add_poll') }}" class="navbar-item">
+                                Add Poll
                             </a>
-                            <a href="{{ url_for('show_vote') }}" class="navbar-item">
-                                Polls
+                            <a href="{{ url_for('show_add_poll') }}" class="navbar-item">
+                                Add Tournament
                             </a>
-                            <a href="{{ url_for('show_signup') }}" class="navbar-item">
-                                Sign Up
-                            </a>
-                            <a href="{{ url_for('show_rules') }}" class="navbar-item">
-                                Rules
-                            </a>
-                            <a href="{{ url_for('show_login') }}" class="navbar-item">
-                                Admin
-                            </a>
+                            <form method="POST" action="/logout" class="navbar-item">
+                                <button class="button is-block is-info is-large is-fullwidth">Logout</button>
+                            </form>
+                    
+                            <!-- TODO: May need to change formatting of logout when we can see jsx -->
                         </div>
                     </div>
                 </div>
