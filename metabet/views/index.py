@@ -3,6 +3,7 @@ Insta485 index (main) view.
 URLs include:
 /
 """
+from xmlrpc.client import boolean
 import flask
 import metabet
 import os
@@ -38,6 +39,28 @@ def show_login():
 def post_login():
 
     return flask.redirect(flask.url_for('show_vote'))
+
+# TODO: add ability to edit tourney?
+@metabet.app.route('/tournaments', methods=['GET'])
+def show_tourney_page():
+    context = {
+        'tournaments': get_tournaments()
+    }
+    return flask.render_template('admin_tournaments.html', **context)
+
+@metabet.app.route('/tournament', methods=['GET'])
+def show_add_tourney():
+    return flask.render_template('add_tournament.html')
+
+@metabet.app.route('/tournament', methods=['POST'])
+def post_tournament():
+    start_date = datetime.strptime(flask.request.form['start_date'], '%Y-%m-%d')
+    theme = flask.request.form['poll_theme']
+    # TODO: add ability for a logo upload
+
+    add_tournament(start_date=start_date, theme=theme, is_active=False)
+    flask.flash('Tournament Added!')
+    return flask.redirect(flask.url_for('show_tourney_page'))
 
 # Return add_poll page 
 @metabet.app.route('/poll', methods=['GET'])
@@ -194,8 +217,21 @@ def add_owner(user, hashed_password, num_owns=1):
     conn.execute(query)
 
 # Add specified poll to poll db
-def add_poll(date, description, end_time):
-    query = "INSERT INTO polls (`poll_date`, `description`, `end_time`) VALUES ({},{},{})".format(sqlify(date), sqlify(description), sqlify(end_time))
+def add_poll(date, description, end_time, redemption=False, tournament_id=None, round_no=None):
+
+    if tournament_id and round_no:
+        query = "INSERT INTO polls (`poll_date`, `description`, `end_time`, `redemption_poll`, `tournament_id`, `round`) \
+            VALUES ({},{},{},{},{},{})".format(sqlify(date), sqlify(description), sqlify(end_time), sqlify(redemption), sqlify(tournament_id), sqlify(round_no))
+    elif tournament_id and not round_no:
+        query = "INSERT INTO polls (`poll_date`, `description`, `end_time`, `redemption_poll`, `tournament_id`) \
+            VALUES ({},{},{},{},{})".format(sqlify(date), sqlify(description), sqlify(end_time), sqlify(redemption), sqlify(tournament_id))
+    elif not tournament_id and round_no:
+        query = "INSERT INTO polls (`poll_date`, `description`, `end_time`, `redemption_poll`, `round`) \
+            VALUES ({},{},{},{},{})".format(sqlify(date), sqlify(description), sqlify(end_time), sqlify(redemption), sqlify(round_no))
+    else:
+        query = "INSERT INTO polls (`poll_date`, `description`, `end_time`, `redemption_poll`) \
+            VALUES ({},{},{},{})".format(sqlify(date), sqlify(description), sqlify(end_time), sqlify(redemption))
+
     conn = get_db()
     conn.execute(query)
     print("Added poll for date: ".format(date))
@@ -226,7 +262,37 @@ def add_correct_choice(date,answer):
     conn.execute(query)
     print("Added answer: {} to poll on date: {}".format(answer, date))
 
+def add_tournament(start_date, theme='', logo='', is_active=False):
+        query = "INSERT INTO tournaments (`start_date`, `theme`, `logo`, `is_active`) \
+            VALUES ({},{},{},{})".format(sqlify(start_date), sqlify(theme), sqlify(logo), is_active)
+        conn = get_db()
+        conn.execute(query)
+
+def get_tournaments():
+    query = 'SELECT * from tournaments'
+    conn = get_db()
+    result = conn.execute(query)
+
+    tournaments = []
+
+    for row in result:
+        cur_tourney = {
+            'id': row[0],
+            'start_date': row[1],
+            'theme': row[2],
+            'logo': row[3],
+            'is_active': row[4]
+        }
+        tournaments.append(cur_tourney)
+
+    return tournaments
+    
+
 # Add quotes to values for MySQL (neccesary to insert into db)
 def sqlify(word):
+    print(word)
+    if type(word) is boolean:
+        word = 0 if False else True
+        print(word)
     return '\'' + str(word) + '\''
 
