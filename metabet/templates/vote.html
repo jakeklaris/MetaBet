@@ -8,6 +8,13 @@
         Loading ...
       </div>
       <!-- Load JavaScript -->
+      <script type="text/javascript">
+        window.process = {
+          env: {
+              NODE_ENV: 'development'
+          }
+        } 
+      </script>
       <script type="text/javascript" src="{{ url_for('static', filename='js/bundle.js') }}"></script>
   </div>
 </div>

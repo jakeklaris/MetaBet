@@ -1,30 +1,44 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import { Button, Card, Divider, Image, Placeholder } from 'semantic-ui-react'
 import moment from 'moment';
+// import { Amplify, Auth, Storage , AmplifyS3Image } from 'aws-amplify';
+import { ConnectMetamaskButtonComponent } from './Metamask';
 
 export default class Poll extends React.Component {
   constructor(props) {
     // Initialize mutable state
     super(props);
     this.state = { 
-      pollDate: false, // Date of poll (default to false for render sake)
       choices: [], // Choices for a given poll
-      description: '', // Description of poll ex. Over/Under Heat Game
-      endTime: '', // Time at which poll closes (EST Time)
       pollEnded: false, // Whether the poll has ended (dependent on endTime)
       selection: 'Over 212.5', // Logged in user's selection on the poll 
       submitted: false, // Whether the user has submitted the poll
       poll: {
-        date: false
+        date: false // Date of poll (default to false for render sake)
       },
       user: 'jake', // logged in user's id
       vote_url: '/api/votes/', // url for GET vote page
-      get_vote_url: '/api/vote/' // url for POST user vote
+      get_vote_url: '/api/vote/', // url for POST user vote,
+      error: { // whether there was an error in backend request
+        exists: false,
+        message: ''
+      }
     };
     this.handleChoiceSelection = this.handleChoiceSelection.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
     this.checkTime = this.checkTime.bind(this);
+
+    // Amplify.configure({
+    //   Auth: {
+    //       identityPoolId: 'us-east-1:c0022f66-7372-4e53-a314-2a17ba536933', //REQUIRED - Amazon Cognito Identity Pool ID
+    //       region: 'us-east-1' // REQUIRED - Amazon Cognito Region
+    //   },
+    //   Storage: {
+    //       AWSS3: {
+    //           bucket: 'metabet-choice-uploads' //REQUIRED -  Amazon S3 bucket name
+    //       }
+    //   }
+    // });
   }
 
   componentDidMount() {
@@ -57,7 +71,15 @@ export default class Poll extends React.Component {
           selection: data.selection
         });
       })
-      .catch((error) => console.log(error));
+      .catch((e) => {
+        this.setState({
+          error: {
+            exists: true,
+            message: e.message
+          }
+        });
+        console.log(e);
+      });
   }
 
   componentWillUnmount() {
@@ -80,7 +102,7 @@ export default class Poll extends React.Component {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        user_id: cur_user,
+        user_id: cur_user, //TODO: set equal to logged in metamask 
         selection: choice 
       }),
       credentials: 'same-origin' 
@@ -92,7 +114,15 @@ export default class Poll extends React.Component {
         submitted: true
       });
     })
-    .catch((error) => console.log(error));
+    .catch((error) => {
+      this.setState({
+        error: {
+          exists: true,
+          message: 'Error Submitting User Vote. Please Try Again.'
+        }      
+      })
+      console.log(error);
+    });
 
   }
 
@@ -118,18 +148,31 @@ export default class Poll extends React.Component {
     const submitted = this.state.submitted;
     const poll = this.state.poll;
     const choices = this.state.choices;
+    const error = this.state.error
 
-    if (poll.date) {
+    console.log(choices);
+    console.log(poll.endTime);
+
+    if (error.exists) {
+      return <h1>{error.message}</h1>
+    }
+    else if (poll.date) {
+      <ConnectMetamaskButtonComponent />
       return (
         <>
-          <h1>{moment(poll.endTime).format("MMMM Do, YYYY")}</h1>
+          <h1>{moment.utc(poll.date).format("MMMM Do, YYYY")}</h1>
           <Divider />
           <h3>{poll.description}</h3>
           <Divider />
           <Card.Group doubling itemsPerRow={poll.numChoices} stackable>
             {choices.map((card) => (
               <Card key={card.choiceName}>
-                <Image src={card.avatar} />
+                {/* <Image src={card.avatar} /> */}
+                {/* <AmplifyS3Image 
+                  imgKey='Oahu_Pic.jpeg'
+                  path='metabet/static/uploads'
+                  identityId='us-east-1:c0022f66-7372-4e53-a314-2a17ba536933'
+                /> */}
 
                 <Card.Content>
                     <>
@@ -153,16 +196,11 @@ export default class Poll extends React.Component {
         </>
       )
     }
-    return <h1>No Open Polls</h1>
+    return (
+      <>  
+        <ConnectMetamaskButtonComponent />
+        <h1>No Open Polls</h1>
+      </>
+    )
   }
 }
-
-
-// HARD CODED REFERENCE:
-
-// const poll = {
-//   date: 'September 29, 2022',
-//   description: 'Over/Under Heat Game',
-//   endTime: '2022-04-06 11:44:10', 
-//   numChoices: 2
-// }

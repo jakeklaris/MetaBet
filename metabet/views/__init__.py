@@ -9,3 +9,5 @@ from metabet.views.index import show_signup
 from metabet.views.index import show_vote
 from metabet.views.api import get_poll
 from metabet.views.api import user_vote
+from metabet.views.index import show_add_tourney
+from metabet.views.index import show_tourney_page

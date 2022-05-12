@@ -12,25 +12,37 @@ def get_poll(user_id):
     context = {}
     date=datetime.date(datetime.now())
     
-    choices = get_choices(date)
-
-    return_choices = []
-    for choice in choices:
-        cur_choice = {
-            'choiceName': choice,
-            'avatar': '../static/images/heat_image.png'
+    try:
+        choices = get_choices(date)
+    except Exception:
+        context = {
+            "message": "Unable to retrieve poll",
+            "status_code": 401
         }
-        return_choices.append(cur_choice)
+        return flask.jsonify(**context), 401
     
+    context['poll'] = {}
+    context['choices'] = choices
+    context['poll']['numChoices'] = len(choices)
+    
+    try:
+        context['poll'] = get_db_poll(date)
+    except Exception:
+        context = {
+            "message": "Unable to retrieve poll",
+            "status_code": 402
+        }
+        return flask.jsonify(**context), 402  
 
-    context['choices'] = return_choices
-    context['poll'] = get_db_poll(date)
-    context['poll']['numChoices'] = len(return_choices)
-
-    # check if user has voted
-
-    context['user_id'] = user_id
-    context['voted'], context['selection'] = has_voted(user_id)
+    try:
+        context['user_id'] = user_id
+        context['voted'], context['selection'] = has_voted(user_id)
+    except Exception:
+        context = {
+            "message": "Unable to retrieve user vote",
+            "status_code": 403
+        }
+        return flask.jsonify(**context), 403        
 
     return flask.jsonify(**context), 200
 
@@ -39,7 +51,15 @@ def get_poll(user_id):
 @metabet.app.route('/api/votes/', methods=['POST'])
 def user_vote():
     data = flask.request.get_json()
-    add_vote(data['user_id'], data['selection'])
+
+    try:
+        add_vote(data['user_id'], data['selection'])
+    except Exception:
+        context = {
+            "message": "Error submitting user vote",
+            "status_code": 400
+        }
+        return flask.jsonify(**context), 400
 
     context = {}
     return flask.jsonify(**context), 200
@@ -67,7 +87,7 @@ def get_db_poll(date=datetime.date(datetime.now())):
 
 # Get choices for this day's poll
 def get_choices(date=datetime.date(datetime.now())):
-    query = 'SELECT c.choice FROM polls p, choices c WHERE p.poll_date = {} AND p.poll_date = c.poll_date'.format(sqlify(date))
+    query = 'SELECT c.choice, c.s3_filename FROM polls p, choices c WHERE p.poll_date = {} AND p.poll_date = c.poll_date'.format(sqlify(date))
 
     conn = get_db()
     result = conn.execute(query)
@@ -75,7 +95,10 @@ def get_choices(date=datetime.date(datetime.now())):
     choices = []
 
     for choice in result:
-        choices.append(choice[0])
+        choices.append({
+            'choiceName': choice[0],
+            'avatar': choice[1]
+        })
 
     return choices
 
