@@ -52,7 +52,9 @@ def post_login():
         admins.append(curr)
     
     if not admins: #currently does not work
-        flask.abort(403)
+        flask.flash("Incorrect username or password")
+        return flask.redirect(flask.url_for('show_login'))
+
 
     stored_password = admins[0]['password'] #currently does not work
     if check_passwords(stored_password, password):
