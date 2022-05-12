@@ -3,12 +3,12 @@ Insta485 index (main) view.
 URLs include:
 /
 """
-from xmlrpc.client import boolean
+
+import hashlib
 import flask
 import metabet
 import os
 import pathlib
-from werkzeug.security import generate_password_hash, check_password_hash
 from metabet.model import get_db
 from datetime import datetime
 from metabet.views.s3_functions import upload_files, CHOICE_IMAGE_BUCKET, UPLOAD_FOLDER
@@ -37,8 +37,45 @@ def show_login():
 # POST login
 @metabet.app.route('/login', methods=['POST'])
 def post_login():
+    username = flask.request.form['username']
+    password = flask.request.form['password']
+    if not username or not password:
+        flask.abort(400)
+    
+    query = 'SELECT * from admin WHERE email = {}'.format(sqlify(username))
+    conn = get_db()
+    result = conn.execute(query)
+    
+    admins = []
+    for admin in result:
+        curr = {
+            'fullname': admin[2],
+            'email': admin[0],
+            'password': admin[1]
+        }
+        admins.append(curr)
+    
+    if not admins: #currently does not work
+        flask.flash("Incorrect username or password")
+        return flask.redirect(flask.url_for('show_login'))
 
-    return flask.redirect(flask.url_for('show_vote'))
+
+    stored_password = admins[0]['password'] #currently does not work
+    if check_passwords(stored_password, password):
+        # set session if not there
+        flask.session['username'] = username
+        # login user
+    else:
+        flask.flash("Incorrect username or password")
+
+    return flask.redirect(flask.url_for('show_add_poll'))
+
+
+@metabet.app.route('/logout', methods=['POST'])
+def logout():
+    flask.session.clear()
+    return flask.redirect(flask.url_for("show_vote"))
+
 
 # TODO: add ability to edit tourney?
 @metabet.app.route('/tournaments', methods=['GET'])
@@ -65,12 +102,16 @@ def post_tournament():
 # Return add_poll page 
 @metabet.app.route('/poll', methods=['GET'])
 def show_add_poll():    
-
-    return flask.render_template('add_poll.html')
+    if "username" in flask.session.keys():
+        return flask.render_template('add_poll.html')
+    return flask.render_template('login.html')
 
 # POST new poll to db
 @metabet.app.route('/poll', methods=['POST'])
 def post_poll():
+    if "username" not in flask.session.keys():
+        flask.abort(403)
+
     # Retrieve data from submitted poll html form
     poll_date = datetime.strptime(flask.request.form['poll_date'], '%Y-%m-%d')
 
@@ -193,6 +234,11 @@ def show_vote():
     context = {}
     return flask.render_template('vote.html', **context)
 
+@metabet.app.route('/rules', methods=['GET'])
+def show_rules():
+    context = {}
+    return flask.render_template('rules.html', **context)
+
 # Return number of nfts that current user owns from nft table
 def get_num_nfts(user_id):
     conn = get_db()
@@ -287,12 +333,23 @@ def get_tournaments():
 
     return tournaments
     
+#checks passwords for admin login
+def check_passwords(real, inp):
+    """Check password is valid."""
+    alg = real.split('$')
+    algorithm = alg[0]
+    salt = alg[1]
+    hash_obj = hashlib.new(algorithm)
+    password_salted = salt + inp
+    hash_obj.update(password_salted.encode('utf-8'))
+    password_hash = hash_obj.hexdigest()
+    password_db_string = "$".join([algorithm, salt, password_hash])
+    if password_db_string == real:
+        return True
+    return False
+
 
 # Add quotes to values for MySQL (neccesary to insert into db)
 def sqlify(word):
-    print(word)
-    if type(word) is boolean:
-        word = 0 if False else True
-        print(word)
     return '\'' + str(word) + '\''
 

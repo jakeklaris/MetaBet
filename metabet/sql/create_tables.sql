@@ -55,3 +55,14 @@ CREATE TABLE `nfts` (
   PRIMARY KEY (`nft_id`),
   KEY `owner` (`owner`)
 );
+CREATE TABLE `admin` (
+  `email` VARCHAR(50) NOT NULL,
+  `password` VARCHAR(256) NOT NULL,
+  `fullname` VARCHAR(50) NOT NULL,
+  PRIMARY KEY (`email`)
+);
+
+INSERT INTO `admin` (fullname, email, password)
+VALUES  ('Joshua Goldstein', 'joshag@umich.edu', 'sha512$a45ffdcc71884853a2cba9e6bc55e812$c739cef1aec45c6e345c8463136dc1ae2fe19963106cf748baf87c7102937aa96928aa1db7fe1d8da6bd343428ff3167f4500c8a61095fb771957b4367868fb8');
+
+-- note: make this into a script so tables are destroyued then reset
