@@ -66,4 +66,27 @@ CREATE TABLE `admin` (
 INSERT INTO `admin` (fullname, email, password)
 VALUES  ('Joshua Goldstein', 'joshag@umich.edu', 'sha512$a45ffdcc71884853a2cba9e6bc55e812$c739cef1aec45c6e345c8463136dc1ae2fe19963106cf748baf87c7102937aa96928aa1db7fe1d8da6bd343428ff3167f4500c8a61095fb771957b4367868fb8');
 
+-- insets some fake values to test, can be removed later
+
+INSERT INTO `tournaments` (start_date, theme, is_active)
+VALUES  ('2022-01-01', 'fake1', '0'),
+        ('2022-02-01', 'fake2', '0'),
+        ('2022-03-01', 'fake3', '0');
+
+INSERT INTO `polls` (tournament_id, round, poll_date, description, redemption_poll, end_time)
+VALUES  ('1', '0', '2022-01-02', "test poll 1", '0', '2022-01-02 12:00'),
+        ('1', '1', '2022-01-03', "test poll 2", '0', '2022-01-02 12:00'),
+        ('1', '2', '2022-01-04', "test poll 3", '0', '2022-01-02 12:00'),
+        ('2', '0', '2022-02-02', "test poll 1", '0', '2022-01-02 12:00'),
+        ('2', '1', '2022-02-03', "test poll 2", '0', '2022-01-02 12:00'),
+        ('2', '2', '2022-02-04', "test poll 3", '0', '2022-01-02 12:00'),
+        ('3', '0', '2022-03-02', "test poll 1", '0', '2022-01-02 12:00'),
+        ('3', '1', '2022-03-03', "test poll 2", '0', '2022-01-02 12:00'),
+        ('3', '2', '2022-03-04', "test poll 3", '0', '2022-01-02 12:00');
+
+        
+
+
+
+
 -- note: make this into a script so tables are destroyued then reset

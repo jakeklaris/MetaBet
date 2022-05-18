@@ -2,7 +2,7 @@
 
 {% block content %}
 <div class="column is-4 is-offset-4">
-    <h3 class="title">List Tournaments</h3>
+    <h3 class="title">All Tournaments</h3>
     <div>
         {% with messages = get_flashed_messages() %}
         {% if messages %}
@@ -13,22 +13,17 @@
         {% endwith %}
         <div>
             <table>
+                <!-- todo: fix spacing here  -->
                 <tr>
-                    <th> Tournament ID </th>
-                    <th> Theme/Description </th>
+                    <th> Start Date </th>
+                    <th> Title </th>
                     <th> Is Active </th>
                 </tr>
                 {% for tournament in tournaments %}
                 <tr>
-                    {% if tournament.is_active %}
-                        <b>
-                    {% endif %}
-                            <td>{{ tournament.id }}<td>
-                            <td>{{ tournament.theme }}<td>
-                            <td>{{ tournament.is_active }}<td>
-                    {% if tournament.is_active %}
-                        </b>
-                    {% endif %}
+                    <td><a href="/tournaments/{{ tournament.id }}">{{ tournament.start_date }}</a><td>
+                    <td>{{ tournament.theme }}<td>
+                    <td>{% if tournament.is_active %} Active {% else %} Not Active {% endif %}<td>
                 </tr>
                 {% endfor %}   
             </table>             

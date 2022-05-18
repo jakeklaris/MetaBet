@@ -1,5 +1,5 @@
 """
-Insta485 index (main) view.
+metabet index (main) view.
 URLs include:
 /
 """
@@ -41,7 +41,8 @@ def post_login():
     username = flask.request.form['username']
     password = flask.request.form['password']
     if not username or not password:
-        flask.abort(400)
+        flask.flash("Incorrect username or password")
+        return flask.redirect(flask.url_for('show_login'))
     
     query = 'SELECT * from admin WHERE email = {}'.format(sqlify(username))
     conn = get_db()
@@ -414,7 +415,7 @@ def get_correct_answer(tournament_id, round, redemption_answer=False):
     return correct_answer, poll_id
 
 def get_tournaments():
-    query = 'SELECT * from tournaments'
+    query = 'SELECT * from tournaments ORDER BY id desc'
     conn = get_db()
     result = conn.execute(query)
 
