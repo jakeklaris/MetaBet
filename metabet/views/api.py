@@ -75,9 +75,13 @@ def get_db_poll(date=datetime.date(datetime.now())):
     poll = {}
     for cur in result:
         poll = {
-            'date': cur[0],
-            'description': cur[1],
-            'endTime': timezone.localize(cur[3])
+            'poll_id': cur[0],
+            'tournament_id': cur[1],
+            'round': cur[2],
+            'redemption_poll': cur[3],
+            'date': cur[4],
+            'description': cur[5],
+            'endTime': timezone.localize(cur[7])
         }
         print("Get from DB")
         print(cur[3])

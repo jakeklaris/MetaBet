@@ -1,3 +1,4 @@
+DROP DATABASE metabet;
 CREATE DATABASE metabet;
 USE metabet;
 CREATE TABLE `choices` (

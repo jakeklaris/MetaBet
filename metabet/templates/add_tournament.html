@@ -1,8 +1,8 @@
-{% extends "base.html" %}
+{% extends "admin_base.html" %}
 
 {% block content %}
 <div class="column is-4 is-offset-4">
-    <h3 class="title">Add Tournament</h3>
+    <h3 class="title">Start New Tournament</h3>
     <div class="box">
         {% with messages = get_flashed_messages() %}
         {% if messages %}
@@ -13,15 +13,9 @@
         {% endwith %}
         <form method="POST" action="/tournament" enctype="multipart/form-data">
             <div class="field">
-                <label for='html'>Start Date</label>
+                <label for='html'>Tournament Theme</label>
                 <div class="control">
-                    <input class="input is-large" type="date" id="start_date" name="start_date" min="2022-01-01" max="2024-12-31">
-                </div>
-            </div>
-            <div class="field">
-                <label for='html'>Poll Theme</label>
-                <div class="control">
-                    <input class="input is-large" type="text" id="poll_theme" name="poll_theme" placeholder="Theme/Description">
+                    <input class="input is-large" type="text" id="theme" name="theme" placeholder="Theme/Description">
                 </div>
             </div>
             <div class="field">
@@ -29,7 +23,11 @@
                     <input class="input is-large" type="text" name="logo" placeholder="logo">
                 </div>
             </div>
-            <button class="button is-block is-info is-large is-fullwidth">Add Tournament</button>
+            <button class="button is-block is-info is-large is-fullwidth">Start Tournament</button>
+        </form>
+        <br></br>
+        <form method="POST" action="/end_tournament">
+            <button class="button is-block is-info is-large is-fullwidth"><b>End Tournament</b></button>
         </form>
     </div>
 </div>

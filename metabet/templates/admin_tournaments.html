@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "admin_base.html" %}
 
 {% block content %}
 <div class="column is-4 is-offset-4">
@@ -15,16 +15,20 @@
             <table>
                 <tr>
                     <th> Tournament ID </th>
-                    <th> Start Date </th>
                     <th> Theme/Description </th>
                     <th> Is Active </th>
                 </tr>
                 {% for tournament in tournaments %}
                 <tr>
-                    <td>{{ tournament.id }}<td>
-                    <td>{{ tournament.start_date }}<td>
-                    <td>{{ tournament.theme }}<td>
-                    <td>{{ tournament.is_active }}<td>
+                    {% if tournament.is_active %}
+                        <b>
+                    {% endif %}
+                            <td>{{ tournament.id }}<td>
+                            <td>{{ tournament.theme }}<td>
+                            <td>{{ tournament.is_active }}<td>
+                    {% if tournament.is_active %}
+                        </b>
+                    {% endif %}
                 </tr>
                 {% endfor %}   
             </table>             
