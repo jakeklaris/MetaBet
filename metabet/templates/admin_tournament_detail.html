@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="has-text-left">
+    <a href="{{ url_for('show_tourney_page') }}">Tournements </a>
+    >
+    {% for tournament in tournaments %}
+    {{ tournament.start_date }} 
+    {% endfor %}
+</div>
+<div class="column is-8 is-offset-2"> 
+    <!-- TODO: ^^ chenge this so its a bit wider and centered in order to best show graph/chart -->
+    <h2 class="title">Tournament details</h2>
+    <div>
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="notification is-danger">
+                {{ messages[0] }}
+            </div>
+        {% endif %}
+        {% endwith %}
+        <div>
+            {% for tournament in tournaments %}
+            <h3>Tournament: {{ tournament.id }} </h3>
+            <h3> Start: {{ tournament.start_date }} </h3>
+            <h3> Theme: {{ tournament.theme }} </h3>   
+            <h3> {% if tournament.is_active %} Active {% else %} Not Active {% endif %}
+            </h3>
+            {% endfor %}             
+        </div>
+        <div>
+            <table>
+                <tr>
+                    <th> Poll ID </th>
+                    <th> Round </th>
+                    <th> Redemption </th>
+                    <th> Poll Date </th>
+                    <th> Description </th>
+                    <th> Correct Answer </th>
+                    <th> End Time </th>
+                </tr>
+                {% for poll in polls %}
+                <tr>
+                    <td>{{ poll.id }}<td>
+                    <td>{{ poll.round }}<td>
+                    <td>{{ poll.redemption }}<td>
+                    <td>{{ poll.poll_date }}<td>
+                    <td>{{ poll.description }}<td>
+                    <td>{{ poll.correct_answer }}<td>
+                    <td>{{ poll.end_time }}<td>
+                </tr>
+                {% endfor %}   
+            </table>             
+        </div>
+
+    </div>
+</div>
+{% endblock %}
