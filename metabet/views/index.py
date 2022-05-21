@@ -6,6 +6,7 @@ URLs include:
 
 import hashlib
 import sqlite3
+from turtle import update
 import flask
 import metabet
 import os
@@ -219,7 +220,9 @@ def post_correct_answer():
     correct = flask.request.form['correct']
     try:
         add_correct_choice(poll_date,correct)
-        # next_round()
+        redemption = True if flask.request.form.get('redemption') else False
+        update_user_standing(get_current_round(), redemption)
+        # TODO: if all polls for current round are closed --> update round number
     except:
         flask.flash('Error adding correct choice to Database')
 
@@ -318,6 +321,16 @@ def add_correct_choice(date,answer):
     conn.execute(query)
     print("Added answer: {} to poll on date: {}".format(answer, date))
 
+def get_current_round():
+    query = "SELECT current_round FROM tournaments WHERE id = {}".format(sqlify(get_current_tournament()))
+    conn = get_db()
+    result = conn.execute(query)
+
+    for row in result:
+        return row[0]
+    
+    return None
+
 def add_tournament(start_date=date.today(), theme='', logo='', is_active=True):
         query = "INSERT INTO tournaments (`start_date`, `theme`, `logo`, `is_active`) \
             VALUES ({},{},{},{})".format(sqlify(start_date), sqlify(theme), sqlify(logo), is_active)
@@ -349,12 +362,6 @@ def get_alive(tournament_id=None):
     return alive_users
 
 
-def next_round():
-    # Update user standing
-    update_user_standing() 
-    # Change round in tourney db 
-    return
-
 # should be called when a correct answer is added to a poll (if redemption answer --> set redemption=True)
 def update_user_standing(cur_round, redemption=False):
     # get alive users or alive redemption users
@@ -374,6 +381,10 @@ def update_user_standing(cur_round, redemption=False):
                 set_user_not_alive(user)
     else:
         # logic for regular poll and is_alive users
+        for user in users:
+            if get_user_answer(user, poll_id) != correct_answer:
+                # whatever logic goes here for --votes, in_redemption
+                pass
         pass
 
 
@@ -385,7 +396,7 @@ def set_user_not_alive(user_id):
     conn.execute(query)
 
 def get_user_answer(user_id, poll_id):
-    query = "SELECT choice FROM votes WHERE user_id = {} AND poll_id = {}".format(sqlify(user_id), sqlify(poll_id))
+    query = "SELECT choice FROM user_votes WHERE user_id = {} AND poll_id = {}".format(sqlify(user_id), sqlify(poll_id))
     conn = get_db()
     result = conn.execute(query)
 

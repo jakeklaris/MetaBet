@@ -92,6 +92,7 @@ export default class Poll extends React.Component {
     const vote_url = this.state.vote_url;
     const choice = this.state.selection;
     const cur_user = this.state.user;
+    const poll = this.state.poll;
 
     console.log('submitted vote');
 
@@ -103,7 +104,8 @@ export default class Poll extends React.Component {
       },
       body: JSON.stringify({
         user_id: cur_user, //TODO: set equal to logged in metamask 
-        selection: choice 
+        selection: choice,
+        poll_id: poll.poll_id
       }),
       credentials: 'same-origin' 
     })
@@ -161,6 +163,8 @@ export default class Poll extends React.Component {
       return (
         <>
           <h1>{moment.utc(poll.date).format("MMMM Do, YYYY")}</h1>
+          <Divider />
+          <h2>Round {poll.round}</h2>
           <Divider />
           <h3>{poll.description}</h3>
           <Divider />
