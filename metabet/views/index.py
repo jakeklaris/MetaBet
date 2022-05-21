@@ -5,6 +5,8 @@ URLs include:
 """
 
 import hashlib
+import sqlite3
+from turtle import update
 import flask
 import metabet
 import os
@@ -69,7 +71,7 @@ def post_login():
     else:
         flask.flash("Incorrect username or password")
 
-    return flask.redirect(flask.url_for('show_add_poll'))
+    return flask.redirect(flask.url_for('show_poll_management'))
 
 
 @metabet.app.route('/logout', methods=['POST'])
@@ -87,22 +89,56 @@ def show_tourney_page():
     return flask.render_template('admin_tournaments.html', **context)
 
 @metabet.app.route('/tournament', methods=['GET'])
-def show_add_tourney():
+def show_tourney_management():
+    if "username" not in flask.session.keys():
+        return flask.render_template('login.html')
+    # add tourney, edit tourney, end tourney, cur tourney details 
     return flask.render_template('add_tournament.html')
 
 @metabet.app.route('/tournament', methods=['POST'])
 def post_tournament():
-    start_date = datetime.strptime(flask.request.form['start_date'], '%Y-%m-%d')
-    theme = flask.request.form['poll_theme']
+    start_date = date.today()
+    theme = flask.request.form['theme']
     # TODO: add ability for a logo upload
+    tourney_exists = False if get_current_tournament() is None else True
 
-    add_tournament(start_date=start_date, theme=theme, is_active=False)
-    flask.flash('Tournament Added!')
+    if tourney_exists:
+        flask.flash('There is already an active tournament. End current tournament before creating a new one')
+        flask.redirect(flask.url_for('show_tourney_management'))
+
+    try:
+        add_tournament(start_date=start_date, theme=theme, is_active=True)
+    except:
+        flask.flash('Error adding tournament. Please Try Again')
+        flask.redirect(flask.url_for('show_tourney_management'))
+
+    flask.flash('Tournament Started!')
     return flask.redirect(flask.url_for('show_tourney_page'))
+
+@metabet.app.route('/end_tournament', methods=['POST'])
+def end_tourney():
+    # display current tournament analytics somewhere --> '/show_tournament_analytics'
+    # shows winners
+    # TODO: ask to make sure
+    # TODO: check that there is no current poll
+
+    try:
+        end_tournament()
+    except Exception as e:
+        print(e)
+        flask.flash('Error ending tournament. Try Again')
+        flask.redirect(flask.url_for('show_tourney_management'))
+
+    flask.flash('Ended Tournament!')
+    return flask.redirect(flask.url_for('show_tourney_management'))
+
+@metabet.app.route('/show_tournament_analytics', methods=['POST'])
+def show_tourney_analytics():
+    return
 
 # Return add_poll page 
 @metabet.app.route('/poll', methods=['GET'])
-def show_add_poll():    
+def show_poll_management():    
     if "username" in flask.session.keys():
         return flask.render_template('add_poll.html')
     return flask.render_template('login.html')
@@ -125,6 +161,12 @@ def post_poll():
     choices = []
     choice_name = 'choice'
 
+    cur_tournament = get_current_tournament()
+
+    if not cur_tournament:
+        flask.flash('There are currently no active tournaments. Please start new tournament before adding a poll.')
+        flask.redirect(flask.url_for('show_tourney_management'))
+
     choice_image_files = []
 
     try:
@@ -142,7 +184,7 @@ def post_poll():
     except Exception as e:
         print(e)
         flask.flash("Error adding choices/images to database/S3. Try Again.")
-        return flask.redirect(flask.url_for('show_add_poll'))
+        return flask.redirect(flask.url_for('show_poll_management'))
 
     try:
         # check if poll exists
@@ -153,21 +195,23 @@ def post_poll():
             delete_poll(poll_date)
 
         # add poll to db
-        add_poll(poll_date, description, end_time)
-    except Exception:
+        add_poll(date=poll_date, description=description, end_time=end_time, tournament_id=cur_tournament,round=1)
+    except Exception as e:
+        print(e)
         flask.flash('Error Adding Poll: Database Error')
-        return flask.redirect(flask.url_for('show_add_poll'))
+        return flask.redirect(flask.url_for('show_poll_management'))
 
 
     try:
         add_choices(poll_date, choices, choice_image_files)
-    except Exception:
+    except Exception as e:
+        print(e)
         delete_poll(poll_date)
         flask.flash("Error adding choices/images to database/S3. Try Again.")
-        return flask.redirect(flask.url_for('show_add_poll'))
+        return flask.redirect(flask.url_for('show_poll_management'))
     
     flask.flash('Poll Added!')
-    return flask.redirect(flask.url_for('show_add_poll'))
+    return flask.redirect(flask.url_for('show_poll_management'))
 
 # Add correct answer for a given poll to poll db
 @metabet.app.route('/add_answer', methods=['POST'])
@@ -176,10 +220,13 @@ def post_correct_answer():
     correct = flask.request.form['correct']
     try:
         add_correct_choice(poll_date,correct)
+        redemption = True if flask.request.form.get('redemption') else False
+        update_user_standing(get_current_round(), redemption)
+        # TODO: if all polls for current round are closed --> update round number
     except:
         flask.flash('Error adding correct choice to Database')
 
-    return flask.redirect(flask.url_for('show_add_poll'))
+    return flask.redirect(flask.url_for('show_poll_management'))
 
 # Check if poll exists for specified day
 def poll_exists(date):
@@ -193,41 +240,6 @@ def poll_exists(date):
             print('Poll exists for date: {}'.format(date))
     
     return exists
-
-# Return signup page
-@metabet.app.route('/signup')
-def show_signup():
-    return flask.render_template('signup.html')
-
-# POST new signup
-@metabet.app.route('/signup', methods=['POST'])
-def signup():
-
-    user_id = flask.request.form.get('metamask')
-    password = flask.request.form.get('password')
-    password_2 = flask.request.form.get('password_copy')
-
-    # check if passwords match
-    if password_2 != password:
-        flask.flash('Passwords do not match. Try Again.')
-        return flask.redirect(flask.url_for('show_signup'))
-
-    # check # of nfts that user owns 
-    try:
-        num_owns = get_num_nfts(user_id)
-    except Exception:
-        flask.flash('Unable to retrieve number of nfts owned from database')
-        return flask.redirect(flask.url_for('show_login'))
-    if num_owns == 0:
-        flask.flash('This Metamask ID does not own a Metabet NFT. Please Try Again')
-        return flask.redirect(flask.url_for('show_signup'))
-
-    try:
-        add_owner(user=user_id, hashed_password=generate_password_hash(password, method='sha256'), num_owns=num_owns)
-    except Exception:
-        flask.flash('Error adding user to database')
-
-    return flask.redirect(flask.url_for('show_login'))
 
 # Return user poll page (mostly filled with front-end React)
 @metabet.app.route('/vote', methods=['GET'])
@@ -268,16 +280,16 @@ def add_poll(date, description, end_time, redemption=False, tournament_id=None, 
 
     if tournament_id and round_no:
         query = "INSERT INTO polls (`poll_date`, `description`, `end_time`, `redemption_poll`, `tournament_id`, `round`) \
-            VALUES ({},{},{},{},{},{})".format(sqlify(date), sqlify(description), sqlify(end_time), sqlify(redemption), sqlify(tournament_id), sqlify(round_no))
+            VALUES ({},{},{},{},{},{})".format(sqlify(date), sqlify(description), sqlify(end_time), redemption, sqlify(tournament_id), sqlify(round_no))
     elif tournament_id and not round_no:
         query = "INSERT INTO polls (`poll_date`, `description`, `end_time`, `redemption_poll`, `tournament_id`) \
-            VALUES ({},{},{},{},{})".format(sqlify(date), sqlify(description), sqlify(end_time), sqlify(redemption), sqlify(tournament_id))
+            VALUES ({},{},{},{},{})".format(sqlify(date), sqlify(description), sqlify(end_time), redemption, sqlify(tournament_id))
     elif not tournament_id and round_no:
         query = "INSERT INTO polls (`poll_date`, `description`, `end_time`, `redemption_poll`, `round`) \
-            VALUES ({},{},{},{},{})".format(sqlify(date), sqlify(description), sqlify(end_time), sqlify(redemption), sqlify(round_no))
+            VALUES ({},{},{},{},{})".format(sqlify(date), sqlify(description), sqlify(end_time), redemption, sqlify(round_no))
     else:
         query = "INSERT INTO polls (`poll_date`, `description`, `end_time`, `redemption_poll`) \
-            VALUES ({},{},{},{})".format(sqlify(date), sqlify(description), sqlify(end_time), sqlify(redemption))
+            VALUES ({},{},{},{})".format(sqlify(date), sqlify(description), sqlify(end_time), redemption)
 
     conn = get_db()
     conn.execute(query)
@@ -309,11 +321,109 @@ def add_correct_choice(date,answer):
     conn.execute(query)
     print("Added answer: {} to poll on date: {}".format(answer, date))
 
-def add_tournament(start_date, theme='', logo='', is_active=False):
+def get_current_round():
+    query = "SELECT current_round FROM tournaments WHERE id = {}".format(sqlify(get_current_tournament()))
+    conn = get_db()
+    result = conn.execute(query)
+
+    for row in result:
+        return row[0]
+    
+    return None
+
+def add_tournament(start_date=date.today(), theme='', logo='', is_active=True):
         query = "INSERT INTO tournaments (`start_date`, `theme`, `logo`, `is_active`) \
             VALUES ({},{},{},{})".format(sqlify(start_date), sqlify(theme), sqlify(logo), is_active)
         conn = get_db()
         conn.execute(query)
+
+        # TODO: lock in users nfts and info --> add to user_entries table
+
+
+def end_tournament():
+    # end the current tournament
+    query = 'UPDATE tournaments SET is_active = {} WHERE id={}'.format(True, sqlify(get_current_tournament()))
+    conn = get_db()
+    conn.execute(query)
+
+
+def get_alive(tournament_id=None):
+    cur_tournament = get_current_tournament() if not tournament_id else tournament_id
+
+    if not cur_tournament:
+        return []
+    
+    query = "SELECT metamask_id FROM user_entries WHERE tournament_id = {} AND is_alive = {}".format(sqlify(cur_tournament), True)
+    conn = get_db()
+    result = conn.execute(query)
+
+    alive_users = [row[0] for row in result]
+
+    return alive_users
+
+
+# should be called when a correct answer is added to a poll (if redemption answer --> set redemption=True)
+def update_user_standing(cur_round, redemption=False):
+    # get alive users or alive redemption users
+    users = get_alive() if not redemption else get_redemption_users()
+
+    # get correct answer for round
+    correct_answer, poll_id = get_correct_answer(get_current_tournament(), cur_round, redemption_answer=redemption) 
+
+
+    if redemption:
+        # deal with people who used redemption
+        for user in users:
+            if get_user_answer(user, poll_id) == correct_answer:
+                # set in_redemption to false, used_redemption to true, votes_left = 1
+                pass
+            else:
+                set_user_not_alive(user)
+    else:
+        # logic for regular poll and is_alive users
+        for user in users:
+            if get_user_answer(user, poll_id) != correct_answer:
+                # whatever logic goes here for --votes, in_redemption
+                pass
+        pass
+
+
+    return
+
+def set_user_not_alive(user_id):
+    query = "UPDATE user_entries SET is_alive = {} WHERE metamask_id = {}".format(False, sqlify(user_id))
+    conn = get_db()
+    conn.execute(query)
+
+def get_user_answer(user_id, poll_id):
+    query = "SELECT choice FROM user_votes WHERE user_id = {} AND poll_id = {}".format(sqlify(user_id), sqlify(poll_id))
+    conn = get_db()
+    result = conn.execute(query)
+
+    for row in result:
+        return row[0]
+    
+    return None
+
+def get_redemption_users():
+    query = "SELECT metamask_id FROM user_entries WHERE tournament_id = {} AND in_redemption = {}".format(sqlify(get_current_tournament()), True)
+    conn = get_db()
+    result = conn.execute(query)
+
+    redemption_users = [row[0] for row in result]   
+
+    return redemption_users
+
+def get_correct_answer(tournament_id, round, redemption_answer=False):
+    conn = get_db()
+    query = "SELECT id, correct_answer FROM polls WHERE tournament_id = {} AND round = {} AND redemption_poll = {}".format(sqlify(tournament_id), sqlify(round), redemption_answer)
+    result = conn.execute(query)    
+
+    for row in result:
+        poll_id = row[0]
+        correct_answer = row[1]
+
+    return correct_answer, poll_id
 
 def get_tournaments():
     query = 'SELECT * from tournaments ORDER BY id desc'
@@ -332,6 +442,7 @@ def get_tournaments():
         }
         tournaments.append(cur_tourney)
 
+    print(tournaments)
     return tournaments
     
 #checks passwords for admin login
@@ -348,6 +459,18 @@ def check_passwords(real, inp):
     if password_db_string == real:
         return True
     return False
+
+def get_current_tournament():
+    query = "SELECT id FROM tournaments WHERE is_active = {}".format(True)
+    conn = get_db()
+    result = conn.execute(query)
+
+    cur_tourney = None
+    
+    for row in result:
+        cur_tourney = row[0]
+
+    return cur_tourney
 
 
 # Add quotes to values for MySQL (neccesary to insert into db)
