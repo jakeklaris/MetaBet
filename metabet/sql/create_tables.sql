@@ -84,9 +84,10 @@ VALUES  ('1', '0', '2022-01-02', "test poll 1", '0', '2022-01-02 12:00'),
         ('3', '1', '2022-03-03', "test poll 2", '0', '2022-01-02 12:00'),
         ('3', '2', '2022-03-04', "test poll 3", '0', '2022-01-02 12:00');
 
-        
-
-
+INSERT INTO `owners` (user_id, num_owns)
+VALUES  ('0', '4'),
+        ('1', '1'),
+        ('2', '0');
 
 
 -- note: make this into a script so tables are destroyued then reset

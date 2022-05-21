@@ -24,13 +24,13 @@ def show_tournament(tournament_id):
 @metabet.app.route('/polls/<poll_id>', methods=['GET'])
 def show_poll(poll_id):
     context = {
-        'poll': get_poll(poll_id),
+        'polls': get_poll(poll_id),
         'responses': "PROVIDE percentages for who chose what"
         # could also include: # of people eliminated
         # tournament/round info (probably on top)
 
     }
-    return flask.render_template('admin_tournament_detail.html', **context)
+    return flask.render_template('admin_poll_detail.html', **context)
 
 #returns a list of polls for a given tournament id 
 def get_polls(tournament_id):
@@ -57,7 +57,7 @@ def get_polls(tournament_id):
 
 #returns information for a single poll
 def get_poll(id):
-    query = "SELECT * from polls WHERE tournament_id = {} ".format(sqlify(id))
+    query = "SELECT * from polls WHERE id = {} ".format(sqlify(id))
     conn = get_db()
     result = conn.execute(query)
 
@@ -66,6 +66,7 @@ def get_poll(id):
     for row in result:
         curr = {
             'id': row[0],
+            'tournament_id': row[1],
             'round': row[2],
             'redemption': row[3],
             'poll_date': row[4],
