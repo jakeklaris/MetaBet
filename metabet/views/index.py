@@ -4,6 +4,7 @@ URLs include:
 /
 """
 
+from asyncore import poll
 import hashlib
 import sqlite3
 from turtle import update
@@ -139,9 +140,16 @@ def show_tourney_analytics():
 # Return add_poll page 
 @metabet.app.route('/poll', methods=['GET'])
 def show_poll_management():    
-    if "username" in flask.session.keys():
-        return flask.render_template('add_poll.html')
-    return flask.render_template('login.html')
+    if "username" not in flask.session.keys():
+        return flask.render_template('login.html')
+    
+    context = {}
+    cur_poll = get_current_poll()
+    
+    if cur_poll:
+        context = cur_poll
+
+    return flask.render_template('add_poll.html', **context)
 
 # POST new poll to db
 @metabet.app.route('/poll', methods=['POST'])
@@ -195,7 +203,7 @@ def post_poll():
             delete_poll(poll_date)
 
         # add poll to db
-        add_poll(date=poll_date, description=description, end_time=end_time, tournament_id=cur_tournament,round=1)
+        add_poll(date=poll_date, description=description, end_time=end_time, tournament_id=cur_tournament,round_no=1)
     except Exception as e:
         print(e)
         flask.flash('Error Adding Poll: Database Error')
@@ -390,6 +398,39 @@ def update_user_standing(cur_round, redemption=False):
 
     return
 
+#gets current poll (where time hasnt expired)
+#works under assumption that only one poll is active at a time
+#TODO: adjust to deal with redemption polls
+def get_current_poll():
+    now = datetime.now()
+    conn = get_db()
+    query = "SELECT * FROM polls WHERE end_time > {}".format(sqlify(now))
+    result = conn.execute(query)    
+
+    for row in result:
+        curr = {}
+        curr["poll_id"] = row[0]
+        curr["description"] = row[5]
+        curr["end_time"] = row[7]
+        curr["poll_date"] = row[4]
+        curr["choices"] = get_poll_choices(curr["poll_date"]) #TODO: Update this to poll id if we wanna change the choices table
+        return curr
+
+def get_poll_choices(poll_date):
+    query = "SELECT * FROM choices WHERE poll_date = {}".format(sqlify(poll_date))
+    conn = get_db()
+    result = conn.execute(query)
+
+    choices = []
+    for row in result:
+        curr = {}
+        curr["choice"] = row[1]
+        curr["s3_filename"] = row[2]
+        choices.append(curr)
+    
+    return choices
+    
+    return None
 def set_user_not_alive(user_id):
     query = "UPDATE user_entries SET is_alive = {} WHERE metamask_id = {}".format(False, sqlify(user_id))
     conn = get_db()

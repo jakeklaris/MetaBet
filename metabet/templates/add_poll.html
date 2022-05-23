@@ -2,7 +2,11 @@
 
 {% block content %}
 <div class="column is-4 is-offset-4">
-    <h3 class="title">Add Poll</h3>
+    {% if poll_id %}
+        <h3 class="title">Edit Poll</h3>
+    {% else %}
+        <h3 class="title">Add Poll</h3>
+    {% endif %}
     <div class="box">
         {% with messages = get_flashed_messages() %}
         {% if messages %}
@@ -11,11 +15,12 @@
             </div>
         {% endif %}
         {% endwith %}
+        
         <form method="POST" action="/poll" enctype="multipart/form-data">
             <div class="field">
                 <label for='html'>Poll Date</label>
                 <div class="control">
-                    <input class="input is-large" type="date" id="poll_date" name="poll_date" value="2022-09-29" min="2022-01-01" max="2024-12-31">
+                    <input class="input is-large" type="date" id="poll_date" name="poll_date" {% if poll_date %}  value="{{ poll_date }}" {% else %} value="2022-09-29" {% endif %} min="2022-01-01" max="2024-12-31">
                 </div>
             </div>
             <div class="field">
@@ -26,7 +31,7 @@
             </div>
             <div class="field">
                 <div class="control">
-                    <input class="input is-large" type="text" name="description" placeholder="Description">
+                    <input class="input is-large" type="text" name="description" placeholder="Description" {% if description %} value="{{ description }}" {% endif %}>
                 </div>
             </div>
             <div class="field">
