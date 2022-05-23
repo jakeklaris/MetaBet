@@ -17,12 +17,18 @@
                 <div class="container">
                     <div id="navbarMenuHeroA" class="navbar-menu">
                         <div class="navbar-end">
-                            <a href="{{ url_for('show_add_poll') }}" class="navbar-item">
-                                Add Poll
+                            <a href="{{ url_for('show_tourney_management') }}" class="navbar-item">
+                                Tournament Management
                             </a>
-                            <a href="{{ url_for('show_add_tourney') }}" class="navbar-item">
-                                Add Tournament
+                            <a href="{{ url_for('show_poll_management') }}" class="navbar-item">
+                                Poll Management
                             </a>
+                            <a href="{{ url_for('show_tourney_page') }}" class="navbar-item">
+                                Tournament Analytics
+                            </a>   
+                            <a href="{{ url_for('show_tourney_page') }}" class="navbar-item">
+                                Tournament History
+                            </a>                             
                             <form method="POST" action="/logout" class="navbar-item">
                                 <button class="button is-block is-info is-large is-fullwidth">Logout</button>
                             </form>

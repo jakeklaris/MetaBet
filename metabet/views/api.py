@@ -75,9 +75,13 @@ def get_db_poll(date=datetime.date(datetime.now())):
     poll = {}
     for cur in result:
         poll = {
-            'date': cur[0],
-            'description': cur[1],
-            'endTime': timezone.localize(cur[3])
+            'poll_id': cur[0],
+            'tournament_id': cur[1],
+            'round': cur[2],
+            'redemption_poll': cur[3],
+            'date': cur[4],
+            'description': cur[5],
+            'endTime': timezone.localize(cur[7])
         }
         print("Get from DB")
         print(cur[3])
@@ -104,13 +108,13 @@ def get_choices(date=datetime.date(datetime.now())):
 
 # Add user vote to db for specified day's poll
 def add_vote(user_id, vote, date=datetime.date(datetime.now())):
-    query = 'INSERT INTO votes VALUES ({},{},{})'.format(sqlify(user_id), sqlify(date), sqlify(vote))
+    query = 'INSERT INTO user_votes VALUES ({},{},{})'.format(sqlify(user_id), sqlify(date), sqlify(vote))
     conn = get_db()
     conn.execute(query)
     
 # Retrieve whether specified user has voted in day's poll from db
 def has_voted(user_id, date=datetime.date(datetime.now())):
-    query = 'SELECT count(*), v.choice FROM votes v WHERE v.user_id = {} AND v.vote_date = {}'.format(sqlify(user_id), sqlify(date))
+    query = 'SELECT count(*), v.choice FROM user_votes v WHERE v.user_id = {} AND v.vote_date = {}'.format(sqlify(user_id), sqlify(date))
 
     conn = get_db()
     result = conn.execute(query)

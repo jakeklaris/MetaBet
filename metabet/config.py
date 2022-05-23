@@ -7,4 +7,4 @@ APPLICATION_ROOT = '/'
 SECRET_KEY = b'[8\xf1S\xa8c\x0e]8\x08\xea\x83\xff\xa5\xb6\x898\x94\xbd\x12\xc9\\c\x03'
 SESSION_COOKIE_NAME = 'login'
 
-SQLALCHEMY_DATABASE_URI = "mysql+pymysql://root:Bigdog95!@localhost/metabet"
+SQLALCHEMY_DATABASE_URI = "mysql+pymysql://root:Orangeshoe355@localhost/metabet"
