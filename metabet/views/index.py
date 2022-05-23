@@ -157,6 +157,7 @@ def post_poll():
 
     description = flask.request.form['description']
     replace = True if flask.request.form.get('replace') else False
+    redemption_poll = True if flask.request.form.get('redemption') else False
 
     choices = []
     choice_name = 'choice'
@@ -195,7 +196,7 @@ def post_poll():
             delete_poll(poll_date)
 
         # add poll to db
-        add_poll(date=poll_date, description=description, end_time=end_time, tournament_id=cur_tournament,round=1)
+        add_poll(date=poll_date, description=description, end_time=end_time, tournament_id=cur_tournament, round_no=2, redemption=redemption_poll)
     except Exception as e:
         print(e)
         flask.flash('Error Adding Poll: Database Error')
