@@ -196,23 +196,30 @@ def post_poll():
             delete_poll(poll_date)
 
         # add poll to db
-        add_poll(date=poll_date, description=description, end_time=end_time, tournament_id=cur_tournament, round_no=2, redemption=redemption_poll)
+        add_poll(date=poll_date, description=description, end_time=end_time, tournament_id=cur_tournament, round_no=get_current_round(), redemption=redemption_poll)
     except Exception as e:
         print(e)
         flask.flash('Error Adding Poll: Database Error')
         return flask.redirect(flask.url_for('show_poll_management'))
 
+    poll_id = get_poll_id(get_current_tournament(), get_current_round(), redemption_poll)
 
     try:
-        add_choices(poll_date, choices, choice_image_files)
+        add_choices(poll_date, choices, choice_image_files, poll_id)
     except Exception as e:
         print(e)
+        delete_choices(poll_id)
         delete_poll(poll_date)
         flask.flash("Error adding choices/images to database/S3. Try Again.")
         return flask.redirect(flask.url_for('show_poll_management'))
     
     flask.flash('Poll Added!')
     return flask.redirect(flask.url_for('show_poll_management'))
+
+def delete_choices(poll_id):
+    query = "DELETE FROM choices WHERE poll_id = {}".format(sqlify(poll_id))
+    conn = get_db()
+    conn.execute(query)
 
 # Add correct answer for a given poll to poll db
 @metabet.app.route('/add_answer', methods=['POST'])
@@ -305,11 +312,11 @@ def delete_poll(date):
 
 
 # Add specified choices to choices db table with poll_date == date
-def add_choices(date, choices, choice_images):
+def add_choices(date, choices, choice_images, poll_id):
     conn = get_db()
     for i in range(len(choices)):
         # query = 'INSERT INTO choices VALUES ({},{},{})'.format(sqlify(date),sqlify(choices[i]),sqlify(choice_images[i]))
-        query = 'INSERT INTO choices VALUES ({},{},{})'.format(sqlify(date),sqlify(choices[i]),sqlify('test_img.jpg'))
+        query = 'INSERT INTO choices VALUES ({},{},{},{})'.format(sqlify(date),sqlify(choices[i]),sqlify('test_img.jpg'), sqlify(poll_id))
 
         conn.execute(query)
         print("Added choice {} for poll on date: {}".format(choices[i], date))
@@ -445,6 +452,21 @@ def get_tournaments():
 
     print(tournaments)
     return tournaments
+
+def get_poll_id(tournament_id, round_no, redemption):
+    query = "SELECT id FROM polls WHERE tournament_id={} AND round={} AND redemption_poll={}".format(sqlify(tournament_id), sqlify(round_no), redemption)
+    conn = get_db()
+    result = conn.execute(query)
+
+    for row in result:
+        return row[0]
+    
+    return None
+
+def delete_choices(poll_id):
+    query = "DELETE FROM choices WHERE poll_id = {}".format(sqlify(poll_id))
+    conn = get_db()
+    conn.execute(query)
     
 #checks passwords for admin login
 def check_passwords(real, inp):

@@ -42,7 +42,9 @@ CREATE TABLE `choices` (
   `poll_date` date NOT NULL,
   `choice` varchar(50) NOT NULL,
   `s3_filename` varchar(100) DEFAULT NULL,
-  PRIMARY KEY (`poll_date`,`choice`)
+  `poll_id` int NOT NULL,
+  PRIMARY KEY (`poll_id`,`choice`),
+  CONSTRAINT `choices_ibfk_1` FOREIGN KEY (`poll_id`) REFERENCES `polls` (`id`)
 );
 
 CREATE TABLE `user_votes` (
