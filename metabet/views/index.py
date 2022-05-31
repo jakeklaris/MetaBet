@@ -156,7 +156,6 @@ def post_poll():
     end_time = datetime.strptime(flask.request.form['end_time'], '%Y-%m-%dT%H:%M')
 
     description = flask.request.form['description']
-    replace = True if flask.request.form.get('replace') else False
     redemption_poll = True if flask.request.form.get('redemption') else False
 
     choices = []
@@ -167,6 +166,19 @@ def post_poll():
     if not cur_tournament:
         flask.flash('There are currently no active tournaments. Please start new tournament before adding a poll.')
         flask.redirect(flask.url_for('show_tourney_management'))
+
+    # error checking on active tournaments
+    current_regular_poll, current_redemption_poll = get_open_polls()
+    
+    if current_regular_poll and current_redemption_poll:
+        flask.flash('There is already a regular poll and a redemption poll for this round. Please add answers for those polls before adding another poll.')
+        flask.redirect(flask.url_for('show_poll_management'))
+    elif current_regular_poll and not redemption_poll:
+        flask.flash('There is already a regular poll for this round. Please end the regular poll or add a redemption poll instead by clicking the redemption poll box.')
+        flask.redirect(flask.url_for('show_poll_management'))   
+    elif current_redemption_poll:
+        flask.flash('There is already a redemption poll for this round. Please add a regular poll or close the current redemption poll before adding another.')
+        flask.redirect(flask.url_for('show_poll_management'))
 
     choice_image_files = []
 
@@ -188,13 +200,6 @@ def post_poll():
         return flask.redirect(flask.url_for('show_poll_management'))
 
     try:
-        # check if poll exists
-        if poll_exists(poll_date):
-            if not replace:
-                flask.flash('Poll already exists for this date. Try Again.')
-                return flask.redirect(flask.url_for('post_poll'))
-            delete_poll(poll_date)
-
         # add poll to db
         add_poll(date=poll_date, description=description, end_time=end_time, tournament_id=cur_tournament, round_no=get_current_round(), redemption=redemption_poll)
     except Exception as e:
@@ -397,6 +402,25 @@ def update_user_standing(cur_round, redemption=False):
 
 
     return
+
+# returns (regular poll, redemption poll) for current round or (None,None) if none exist for current round
+def get_open_polls():
+    query = "SELECT * FROM polls WHERE tournament_id = {} AND round = {}".format(sqlify(get_current_tournament()), sqlify(get_current_round()))
+    conn = get_db()
+    result = conn.execute(query)
+
+    redemption = regular = None
+
+    for row in result:
+        if row[3] == 1:
+            print("redemption poll with id: {}".format(row[0]))
+            redemption = row[0]
+        else:
+            print("regular poll with id: {}".format(row[0]))
+            regular = row[0]
+
+    return regular, redemption
+
 
 def set_user_not_alive(user_id):
     query = "UPDATE user_entries SET is_alive = {} WHERE metamask_id = {}".format(False, sqlify(user_id))
