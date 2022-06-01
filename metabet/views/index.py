@@ -411,7 +411,7 @@ def get_current_poll():
         curr = {}
         curr["poll_id"] = row[0]
         curr["description"] = row[5]
-        curr["end_time"] = row[7]
+        curr["end_time"] = row[7].isoformat()
         curr["poll_date"] = row[4]
         curr["choices"] = get_poll_choices(curr["poll_date"]) #TODO: Update this to poll id if we wanna change the choices table
         return curr
