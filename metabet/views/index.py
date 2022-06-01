@@ -388,20 +388,71 @@ def update_user_standing(cur_round, redemption=False):
         # deal with people who used redemption
         for user in users:
             if get_user_answer(user, poll_id) == correct_answer:
-                # set in_redemption to false, used_redemption to true, votes_left = 1
-                pass
+                set_in_redemption(user, False)
+                set_num_user_votes(user, 1)
+                set_used_redemption(user, True)
             else:
                 set_user_not_alive(user)
     else:
         # logic for regular poll and is_alive users
         for user in users:
             if get_user_answer(user, poll_id) != correct_answer:
-                # whatever logic goes here for --votes, in_redemption
-                pass
-        pass
-
+                # decrease num_user_votes by 1
+                decrease_user_votes(user, value=1)
+                if get_num_votes_left(user) == 0:
+                    if get_used_redemption(user):
+                        set_user_not_alive()
+                    else:
+                        set_in_redemption(user, True)
 
     return
+
+def get_used_redemption(user_id):
+    query = "SELECT * FROM user_entries WHERE metamask_id = {} AND tournament_id = {}".format(sqlify(user_id), sqlify(get_current_tournament()))
+    conn = get_db()
+    result = conn.execute(query)
+
+    used_redemption = None
+
+    for row in result:
+        used_redemption = row[3]
+
+    return True if used_redemption == 1 else False   
+
+# Sets used_redemption value to new_value for current tournament and given user_id
+def set_used_redemption(user_id, new_value=True):
+    query = "UPDATE user_entries SET used_redemption = {} WHERE metamask_id = {} AND tournament_id = {}".format(new_value, sqlify(user_id), sqlify(get_current_tournament()))
+    conn = get_db()
+    conn.execute(query)    
+
+# Sets in redemption value to new_value for current tournament and given user_id
+def set_in_redemption(user_id, new_value=True):
+    query = "UPDATE user_entries SET in_redemption = {} WHERE metamask_id = {} AND tournament_id = {}".format(new_value, sqlify(user_id), sqlify(get_current_tournament()))
+    conn = get_db()
+    conn.execute(query)
+
+# decrease number of user votes in user_entries by value provided
+def decrease_user_votes(user_id, value=1):
+    query = "UPDATE user_entries SET votes_left = votes_left - {} WHERE metamask_id = {} AND tournament_id = {}".format(sqlify(value), sqlify(user_id), sqlify(get_current_tournament()))
+    conn = get_db()
+    conn.execute(query)
+
+def set_num_user_votes(user_id, value=1):
+    query = "UPDATE user_entries SET votes_left = {} WHERE metamask_id = {} AND tournament_id = {}".format(sqlify(value), sqlify(user_id), sqlify(get_current_tournament()))
+    conn = get_db()
+    conn.execute(query)
+
+def get_num_votes_left(user_id):
+    query = "SELECT * FROM user_entries WHERE metamask_id = {} AND tournament_id = {}".format(sqlify(user_id), sqlify(get_current_tournament()))
+    conn = get_db()
+    result = conn.execute(query)
+
+    num_votes = 0
+
+    for row in result:
+        num_votes = row[5]
+
+    return num_votes
 
 # returns (regular poll, redemption poll) for current round or (None,None) if none exist for current round
 def get_open_polls():
