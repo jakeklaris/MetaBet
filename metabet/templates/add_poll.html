@@ -2,7 +2,12 @@
 
 {% block content %}
 <div class="column is-4 is-offset-4">
-    <h3 class="title">Add Poll</h3>
+    {% if poll_id %}
+        <h3 class="title">Edit Poll</h3>
+    {% else %}
+        <h3 class="title">Add Poll</h3>
+    {% endif %}
+
     <div class="box">
         {% with messages = get_flashed_messages() %}
         {% if messages %}
@@ -11,61 +16,67 @@
             </div>
         {% endif %}
         {% endwith %}
+        
         <form method="POST" action="/poll" enctype="multipart/form-data">
+            <input type="hidden" {% if poll_id %} value="{{ poll_id }}" {% endif %}>
             <div class="field">
                 <label for='html'>Poll Date</label>
                 <div class="control">
-                    <input class="input is-large" type="date" id="poll_date" name="poll_date" value="2022-09-29" min="2022-01-01" max="2024-12-31">
+                    <input class="input is-large" type="date" id="poll_date" name="poll_date" {% if poll_date %}  value="{{ poll_date }}" {% else %} value="2022-09-29" {% endif %} min="2022-01-01" max="2024-12-31">
                 </div>
             </div>
             <div class="field">
                 <label for='html'>Poll End Time</label>
                 <div class="control">
-                    <input class="input is-large" type="datetime-local" id="end_time" name="end_time" value="2022-09-29" min="2022-01-01" max="2024-12-31">
+                    <input class="input is-large" type="datetime-local" id="end_time" name="end_time" value="{{ end_time }}" min="2022-01-01" max="2024-12-31">
                 </div>
             </div>
             <div class="field">
                 <div class="control">
-                    <input class="input is-large" type="text" name="description" placeholder="Description">
+                    <input class="input is-large" type="text" name="description" placeholder="Description" {% if description %} value="{{ description }}" {% endif %}>
                 </div>
             </div>
             <div class="field">
                 <div class="control">
-                    <input class="input is-large" type="text" name="choice1" placeholder="Choice 1">
+                    <input class="input is-large" type="text" name="choice1" placeholder="Choice 1"  {% if choices[0] %}value="{{ choices[0].choice }}" {% endif %}>
                     <input type="file" name="file1">
                 </div>
             </div>
             <div class="field">
                 <div class="control">
-                    <input class="input is-large" type="text" name="choice2" placeholder="Choice 2">
+                    <input class="input is-large" type="text" name="choice2" placeholder="Choice 2"{% if choices[1] %}value="{{ choices[1].choice }}" {% endif %}>
                     <input type="file" name="file2">
                 </div>
             </div>
             <div class="field">
                 <div class="control">
-                    <input class="input is-large" type="text" name="choice3" placeholder="Choice 3">
+                    <input class="input is-large" type="text" name="choice3" placeholder="Choice 3" {% if choices[2] %}value="{{ choices[2].choice }}" {% endif %}>
                     <input type="file" name="file3">
                 </div>
             </div>
             <div class="field">
                 <div class="control">
-                    <input class="input is-large" type="text" name="choice4" placeholder="Choice 4">
+                    <input class="input is-large" type="text" name="choice4" placeholder="Choice 4" {% if choices[3] %}value="{{ choices[3].choice }}" {% endif %}>
                     <input type="file" name="file4">
                 </div>
             </div>
             <div class="field">
                 <div class="control">
-                    <input class="input is-large" type="text" name="choice5" placeholder="Choice 5">
+                    <input class="input is-large" type="text" name="choice5" placeholder="Choice 5" {% if choices[3] %}value="{{ choices[3].choice }}" {% endif %}>
                     <input type="file" name="file5">
                 </div>
             </div>
-            <div class="field">
+            <!-- <div class="field">
                 <label class="checkbox">
                     <input type="checkbox" name="replace">
                     Replace Existing Poll
                 </label>
-            </div>
-            <button class="button is-block is-info is-large is-fullwidth">Add Poll</button>
+            </div> -->
+            {% if poll_id %}
+                <button class="button is-block is-info is-large is-fullwidth">Update Poll</button>
+            {% else %}
+                <button class="button is-block is-info is-large is-fullwidth">Add Poll</button>
+            {% endif %}
         </form>
 
         <br></br>

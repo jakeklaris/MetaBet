@@ -4,7 +4,7 @@ from flask_sqlalchemy import SQLAlchemy
 app = flask.Flask(__name__)  # pylint: disable=invalid-name
 
 # MySQL DB
-app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://root:Orangeshoe355@localhost/metabet"
+app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://root:Bigdog95!@localhost/metabet"
 db = SQLAlchemy(app)
 
 # Read settings from config module (insta485/config.py)

@@ -41,7 +41,7 @@
                 </tr>
                 {% for poll in polls %}
                 <tr>
-                    <td>{{ poll.id }}<td>
+                    <td><a href="/polls/{{ poll.id }}">{{ poll.id }}</a><td>
                     <td>{{ poll.round }}<td>
                     <td>{{ poll.redemption }}<td>
                     <td>{{ poll.poll_date }}<td>
