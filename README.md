@@ -1,1 +1,1 @@
-MetaBet Software
+Poll and Voting Platform
