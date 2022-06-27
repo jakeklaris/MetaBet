@@ -9,6 +9,7 @@ CREATE TABLE `tournaments` (
   `logo` varchar(255) DEFAULT NULL,
   `is_active` tinyint(1) NOT NULL,
   `current_round` int NOT NULL DEFAULT '1',
+  `active_poll` int DEFAULT NULL,
   PRIMARY KEY (`id`)
 );
 
@@ -22,7 +23,7 @@ CREATE TABLE `polls` (
   `correct_answer` varchar(256) DEFAULT NULL,
   `end_time` datetime NOT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `tournament_id_2` (`tournament_id`,`round`,`redemption_poll`),
+  UNIQUE KEY `tournament_id_2` (`tournament_id`,`round`),
   KEY `tournament_id` (`tournament_id`),
   CONSTRAINT `polls_ibfk_1` FOREIGN KEY (`tournament_id`) REFERENCES `tournaments` (`id`)
 );

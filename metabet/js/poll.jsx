@@ -45,6 +45,7 @@ export default class Poll extends React.Component {
     // This line automatically assigns this.props.url to the const variable url
     const url = this.state.get_vote_url;
     const cur_user = this.state.user;
+    const user_url = '/api/users/'
 
     // Set up 10 second timer to check for current time and whether the poll has closed
     this.checkTime();

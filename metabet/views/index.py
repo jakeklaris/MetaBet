@@ -4,9 +4,11 @@ URLs include:
 /
 """
 
+from curses import meta
 import hashlib
 import sqlite3
 from turtle import update
+from click import get_current_context
 import flask
 import metabet
 import os
@@ -93,7 +95,10 @@ def show_tourney_management():
     if "username" not in flask.session.keys():
         return flask.render_template('login.html')
     # add tourney, edit tourney, end tourney, cur tourney details 
-    return flask.render_template('add_tournament.html')
+    context = {
+        'current_tourney': get_current_tournament()
+    }
+    return flask.render_template('add_tournament.html', **context)
 
 @metabet.app.route('/tournament', methods=['POST'])
 def post_tournament():
@@ -140,8 +145,36 @@ def show_tourney_analytics():
 @metabet.app.route('/poll', methods=['GET'])
 def show_poll_management():    
     if "username" in flask.session.keys():
-        return flask.render_template('add_poll.html')
+        active_poll = get_active_poll_id()
+        choices = [] if active_poll == -1 else get_choices(active_poll)
+        context = {
+            'round_no': get_current_round(),
+            'choices': choices
+        }
+        return flask.render_template('add_poll.html', **context)
+
     return flask.render_template('login.html')
+
+def get_choices(poll_id):
+    query = "SELECT choice FROM choices WHERE poll_id={}".format(sqlify(poll_id))
+    result = get_db().execute(query)
+    return [row[0] for row in result]
+
+@metabet.app.route('/current_info')
+def show_current_info():
+    round = get_current_round()
+    tournament = get_current_tournament()
+    active_poll = get_active_poll_id()
+    
+    context = {
+        'round_no': round,
+        'tourney_id': tournament,
+        'poll_id': active_poll,
+        'choices': []
+    }
+
+    return flask.render_template('admin_current_tournament.html', **context)
+
 
 # POST new poll to db
 @metabet.app.route('/poll', methods=['POST'])
@@ -165,20 +198,14 @@ def post_poll():
 
     if not cur_tournament:
         flask.flash('There are currently no active tournaments. Please start new tournament before adding a poll.')
-        flask.redirect(flask.url_for('show_tourney_management'))
+        return flask.redirect(flask.url_for('show_tourney_management'))
 
     # error checking on active tournaments
     current_regular_poll, current_redemption_poll = get_open_polls()
     
-    if current_regular_poll and current_redemption_poll:
-        flask.flash('There is already a regular poll and a redemption poll for this round. Please add answers for those polls before adding another poll.')
-        flask.redirect(flask.url_for('show_poll_management'))
-    elif current_regular_poll and not redemption_poll:
-        flask.flash('There is already a regular poll for this round. Please end the regular poll or add a redemption poll instead by clicking the redemption poll box.')
-        flask.redirect(flask.url_for('show_poll_management'))   
-    elif current_redemption_poll:
-        flask.flash('There is already a redemption poll for this round. Please add a regular poll or close the current redemption poll before adding another.')
-        flask.redirect(flask.url_for('show_poll_management'))
+    if current_regular_poll or current_redemption_poll:
+        flask.flash('There is an active poll. Please add answer to that poll before adding another poll.')
+        return flask.redirect(flask.url_for('show_poll_management'))
 
     choice_image_files = []
 
@@ -217,9 +244,17 @@ def post_poll():
         delete_poll(poll_date)
         flask.flash("Error adding choices/images to database/S3. Try Again.")
         return flask.redirect(flask.url_for('show_poll_management'))
+
+    # set active poll to current
+    set_active_poll(poll_id)
     
     flask.flash('Poll Added!')
     return flask.redirect(flask.url_for('show_poll_management'))
+
+def set_active_poll(poll_id):
+    query = "UPDATE tournaments SET active_poll = {} WHERE id = {}".format(sqlify(poll_id), sqlify(get_current_tournament()))
+    conn = get_db()
+    conn.execute(query)
 
 def delete_choices(poll_id):
     query = "DELETE FROM choices WHERE poll_id = {}".format(sqlify(poll_id))
@@ -229,17 +264,44 @@ def delete_choices(poll_id):
 # Add correct answer for a given poll to poll db
 @metabet.app.route('/add_answer', methods=['POST'])
 def post_correct_answer():
-    poll_date = datetime.strptime(flask.request.form['poll_date'], '%Y-%m-%d')
-    correct = flask.request.form['correct']
+    if(get_active_poll_id() == -1):
+        flask.flash("There are no active polls. Please add a poll before adding correct answer")
+        return flask.redirect(flask.url_for('show_poll_management'))
+
+    if('choices' not in flask.request.form.keys()):
+        flask.flash("Please select a correct answer")
+        return flask.redirect(flask.url_for('show_poll_management'))
+
+    correct = flask.request.form['choices']
     try:
-        add_correct_choice(poll_date,correct)
-        redemption = True if flask.request.form.get('redemption') else False
-        update_user_standing(get_current_round(), redemption)
-        # TODO: if all polls for current round are closed --> update round number
+        add_correct_choice(correct)
+        update_user_standing(get_current_round(), redemption=active_poll_is_redemption())
+        # set active poll to -1
+        set_active_poll(-1)
+        # update round number
+        set_current_round(get_current_round() + 1)
     except:
         flask.flash('Error adding correct choice to Database')
 
+    flask.flash("We are now in round {}".format(get_current_round()))
     return flask.redirect(flask.url_for('show_poll_management'))
+
+# returns True if active poll is a redemption poll
+def active_poll_is_redemption():
+    query = "SELECT redemption_poll FROM polls WHERE id={}".format(sqlify(get_active_poll_id))
+    conn = get_db()
+    result = conn.execute(query)
+
+    is_redemption = False
+    for row in result:
+        is_redemption = True if row[0] == 1 else False
+
+    return is_redemption
+
+def set_current_round(round):
+    query = "UPDATE tournaments SET current_round={} WHERE id={}".format(sqlify(round), sqlify(get_current_tournament()))
+    conn = get_db()
+    conn.execute(query)
 
 # Check if poll exists for specified day
 def poll_exists(date):
@@ -288,7 +350,7 @@ def add_owner(user, hashed_password, num_owns=1):
     query = 'INSERT INTO owners (`user_id`,`password`,`num_owns`) VALUES ({},{},{})'.format(sqlify(user),sqlify(hashed_password),num_owns)
     conn.execute(query)
 
-# Add specified poll to poll db
+# Add specified poll to poll db 
 def add_poll(date, description, end_time, redemption=False, tournament_id=None, round_no=None):
 
     if tournament_id and round_no:
@@ -327,12 +389,12 @@ def add_choices(date, choices, choice_images, poll_id):
         print("Added choice {} for poll on date: {}".format(choices[i], date))
     # TODO: upload_files(choice_images, CHOICE_IMAGE_BUCKET)
 
-# Add correct choice for specified date's poll to polls db
-def add_correct_choice(date,answer):
-    query = "UPDATE polls SET correct_answer = {} WHERE poll_date = {}".format(sqlify(answer), sqlify(date))
+# Add correct choice for active poll
+def add_correct_choice(answer):
+    query = "UPDATE polls SET correct_answer = {} WHERE id = {}".format(sqlify(answer), sqlify(get_active_poll_id()))
     conn = get_db()
     conn.execute(query)
-    print("Added answer: {} to poll on date: {}".format(answer, date))
+    print("Added answer: {} to poll with id: {}".format(answer, get_active_poll_id()))
 
 def get_current_round():
     query = "SELECT current_round FROM tournaments WHERE id = {}".format(sqlify(get_current_tournament()))
@@ -345,8 +407,8 @@ def get_current_round():
     return None
 
 def add_tournament(start_date=date.today(), theme='', logo='', is_active=True):
-        query = "INSERT INTO tournaments (`start_date`, `theme`, `logo`, `is_active`) \
-            VALUES ({},{},{},{})".format(sqlify(start_date), sqlify(theme), sqlify(logo), is_active)
+        query = "INSERT INTO tournaments (`start_date`, `theme`, `logo`, `is_active`, `active_poll`) \
+            VALUES ({},{},{},{},{})".format(sqlify(start_date), sqlify(theme), sqlify(logo), is_active, sqlify(-1))
         conn = get_db()
         conn.execute(query)
 
@@ -355,7 +417,7 @@ def add_tournament(start_date=date.today(), theme='', logo='', is_active=True):
 
 def end_tournament():
     # end the current tournament
-    query = 'UPDATE tournaments SET is_active = {} WHERE id={}'.format(True, sqlify(get_current_tournament()))
+    query = 'UPDATE tournaments SET is_active = {} WHERE id={}'.format(False, sqlify(get_current_tournament()))
     conn = get_db()
     conn.execute(query)
 
@@ -381,7 +443,7 @@ def update_user_standing(cur_round, redemption=False):
     users = get_alive() if not redemption else get_redemption_users()
 
     # get correct answer for round
-    correct_answer, poll_id = get_correct_answer(get_current_tournament(), cur_round, redemption_answer=redemption) 
+    correct_answer, poll_id = get_correct_answer(get_current_tournament(), cur_round) 
 
 
     if redemption:
@@ -400,7 +462,8 @@ def update_user_standing(cur_round, redemption=False):
                 # decrease num_user_votes by 1
                 decrease_user_votes(user, value=1)
                 if get_num_votes_left(user) == 0:
-                    if get_used_redemption(user):
+                    # only allow redemption after round 1
+                    if get_used_redemption(user) or cur_round > 1:
                         set_user_not_alive()
                     else:
                         set_in_redemption(user, True)
@@ -499,7 +562,7 @@ def get_redemption_users():
 
 def get_correct_answer(tournament_id, round, redemption_answer=False):
     conn = get_db()
-    query = "SELECT id, correct_answer FROM polls WHERE tournament_id = {} AND round = {} AND redemption_poll = {}".format(sqlify(tournament_id), sqlify(round), redemption_answer)
+    query = "SELECT id, correct_answer FROM polls WHERE tournament_id = {} AND round = {}".format(sqlify(tournament_id), sqlify(round))
     result = conn.execute(query)    
 
     for row in result:
@@ -570,6 +633,18 @@ def get_current_tournament():
 
     return cur_tourney
 
+# get active poll -- return -1 if none 
+def get_active_poll_id():
+    query = "SELECT active_poll FROM tournaments WHERE is_active = {}".format(True)
+    conn = get_db()
+    result = conn.execute(query)
+
+    cur_poll = None
+    
+    for row in result:
+        cur_poll = row[0]
+
+    return cur_poll
 
 # Add quotes to values for MySQL (neccesary to insert into db)
 def sqlify(word):

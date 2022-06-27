@@ -2,33 +2,36 @@
 
 {% block content %}
 <div class="column is-4 is-offset-4">
-    <h3 class="title">All Tournaments</h3>
     <div>
-        {% with messages = get_flashed_messages() %}
-        {% if messages %}
-            <div class="notification is-danger">
-                {{ messages[0] }}
-            </div>
-        {% endif %}
-        {% endwith %}
+        <h3 class="title">All Tournaments</h3>
         <div>
-            <table>
-                <!-- todo: fix spacing here  -->
-                <tr>
-                    <th> Start Date </th>
-                    <th> Title </th>
-                    <th> Is Active </th>
-                </tr>
-                {% for tournament in tournaments %}
-                <tr>
-                    <td><a href="/tournaments/{{ tournament.id }}">{{ tournament.start_date }}</a><td>
-                    <td>{{ tournament.theme }}<td>
-                    <td>{% if tournament.is_active %} Active {% else %} Not Active {% endif %}<td>
-                </tr>
-                {% endfor %}   
-            </table>             
-        </div>
+            {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="notification is-danger">
+                    {{ messages[0] }}
+                </div>
+            {% endif %}
+            {% endwith %}
+            <div>
+                <table>
+                    <!-- todo: fix spacing here  -->
+                    <tr>
+                        <th> Start Date </th>
+                        <th> Title </th>
+                        <th> Is Active </th>
+                    </tr>
+                    {% for tournament in tournaments %}
+                    <tr>
+                        <td><a href="/tournaments/{{ tournament.id }}">{{ tournament.start_date }}</a><td>
+                        <td>{{ tournament.theme }}<td>
+                        <td>{% if tournament.is_active %} Active {% else %} Not Active {% endif %}<td>
+                    </tr>
+                    {% endfor %}   
+                </table>             
+            </div>
 
+        </div>
     </div>
+
 </div>
 {% endblock %}

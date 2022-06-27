@@ -2,9 +2,26 @@ import flask
 import metabet
 from datetime import datetime
 from metabet.model import get_db
-from metabet.views.index import sqlify
+from metabet.views.index import sqlify, get_current_round, get_current_tournament
 import pytz
 
+# TODO add function that returns info on the user --> isActive, inRedemption
+@metabet.app.route('/api/users/<user_id>/', methods=['GET'])
+def get_user_info(user_id):
+
+    context = {}
+    return flask.jsonify(**context), 200
+
+
+# TODO add function that returns info on the poll --> should call get_poll(poll_id)
+@metabet.app.route('/api/polls/<poll_id>/', methods=['GET'])
+def get_poll_2(poll_id):
+
+    context = {}
+    return flask.jsonify(**context), 200
+
+
+# TODO change get_db_poll to be dependent on poll_id not date --> same with choices
 # Return JSON with information on current day's poll
 @metabet.app.route('/api/vote/<user_id>/', methods=['GET'])
 def get_poll(user_id):
@@ -22,6 +39,7 @@ def get_poll(user_id):
         }
         return flask.jsonify(**context), 401
     
+
     context['poll'] = {}
     context['choices'] = choices
     context['poll']['numChoices'] = len(choices)

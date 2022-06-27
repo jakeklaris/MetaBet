@@ -11,6 +11,7 @@
             </div>
         {% endif %}
         {% endwith %}
+        <h3>Round {{round_no}}</h3>
         <form method="POST" action="/poll" enctype="multipart/form-data">
             <div class="field">
                 <label for='html'>Poll Date</label>
@@ -69,26 +70,12 @@
         </form>
 
         <br></br>
-
-        <form method="POST" action="/add_answer">
-            <div class="field">
-                <div class="control">
-                    <input class="input is-large" type="date" id="poll_date" name="poll_date" value="2022-09-29" min="2022-01-01" max="2024-12-31">
-                </div>
-            </div>
-            <div class="field">
-                <div class="control">
-                    <input class="input is-large" type="text" name="correct" placeholder="Correct Answer">
-                </div>
-            </div>
-            <div class="field">
-                <label class="checkbox">
-                    <input type="checkbox" name="redemption">
-                    Redemption Poll Answer
-                </label>
-            </div>
-            <button class="button is-block is-info is-large is-fullwidth">Add Correct Answer</button>
-        </form>    
+        <form method='POST' action="/add_answer">   
+            {% for choice in choices %}
+                <input type="radio" name="choices" id={{choice}} value="{{choice}}">{{choice}}</input><br>        
+            {% endfor %}
+            <input class="button is-block is-info is-large is-fullwidth" type="submit" value="Submit Correct Answer">
+        </form>
     </div>
 </div>
 {% endblock %}
