@@ -9,6 +9,7 @@ CREATE TABLE `tournaments` (
   `logo` varchar(255) DEFAULT NULL,
   `is_active` tinyint(1) NOT NULL,
   `current_round` int NOT NULL DEFAULT '1',
+  `active_poll` int DEFAULT NULL,
   PRIMARY KEY (`id`)
 );
 
@@ -22,7 +23,7 @@ CREATE TABLE `polls` (
   `correct_answer` varchar(256) DEFAULT NULL,
   `end_time` datetime NOT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `tournament_id_2` (`tournament_id`,`round`,`redemption_poll`),
+  UNIQUE KEY `tournament_id_2` (`tournament_id`,`round`),
   KEY `tournament_id` (`tournament_id`),
   CONSTRAINT `polls_ibfk_1` FOREIGN KEY (`tournament_id`) REFERENCES `tournaments` (`id`)
 );
@@ -42,7 +43,9 @@ CREATE TABLE `choices` (
   `poll_date` date NOT NULL,
   `choice` varchar(50) NOT NULL,
   `s3_filename` varchar(100) DEFAULT NULL,
-  PRIMARY KEY (`poll_date`,`choice`)
+  `poll_id` int NOT NULL,
+  PRIMARY KEY (`poll_id`,`choice`),
+  CONSTRAINT `choices_ibfk_1` FOREIGN KEY (`poll_id`) REFERENCES `polls` (`id`)
 );
 
 CREATE TABLE `user_votes` (
@@ -99,10 +102,6 @@ VALUES  ('1', '0', '2022-01-02', "test poll 1", '0', '2022-01-02 12:00'),
         ('3', '0', '2022-03-02', "test poll 1", '0', '2022-01-02 12:00'),
         ('3', '1', '2022-03-03', "test poll 2", '0', '2022-01-02 12:00'),
         ('3', '2', '2022-03-04', "test poll 3", '0', '2022-01-02 12:00');
-
-        
-
-
 
 
 -- note: make this into a script so tables are destroyued then reset

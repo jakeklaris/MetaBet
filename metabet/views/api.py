@@ -2,9 +2,26 @@ import flask
 import metabet
 from datetime import datetime
 from metabet.model import get_db
-from metabet.views.index import sqlify
+from metabet.views.index import sqlify, get_current_round, get_current_tournament
 import pytz
 
+# TODO add function that returns info on the user --> isActive, inRedemption
+@metabet.app.route('/api/users/<user_id>/', methods=['GET'])
+def get_user_info(user_id):
+
+    context = {}
+    return flask.jsonify(**context), 200
+
+
+# TODO add function that returns info on the poll --> should call get_poll(poll_id)
+@metabet.app.route('/api/polls/<poll_id>/', methods=['GET'])
+def get_poll_2(poll_id):
+
+    context = {}
+    return flask.jsonify(**context), 200
+
+
+# TODO change get_db_poll to be dependent on poll_id not date --> same with choices
 # Return JSON with information on current day's poll
 @metabet.app.route('/api/vote/<user_id>/', methods=['GET'])
 def get_poll(user_id):
@@ -14,20 +31,23 @@ def get_poll(user_id):
     
     try:
         choices = get_choices(date)
-    except Exception:
+    except Exception as e:
+        print(e)
         context = {
             "message": "Unable to retrieve poll",
             "status_code": 401
         }
         return flask.jsonify(**context), 401
     
+
     context['poll'] = {}
     context['choices'] = choices
     context['poll']['numChoices'] = len(choices)
     
     try:
         context['poll'] = get_db_poll(date)
-    except Exception:
+    except Exception as e:
+        print(e)
         context = {
             "message": "Unable to retrieve poll",
             "status_code": 402
@@ -37,7 +57,8 @@ def get_poll(user_id):
     try:
         context['user_id'] = user_id
         context['voted'], context['selection'] = has_voted(user_id)
-    except Exception:
+    except Exception as e:
+        print(e)
         context = {
             "message": "Unable to retrieve user vote",
             "status_code": 403
@@ -53,7 +74,7 @@ def user_vote():
     data = flask.request.get_json()
 
     try:
-        add_vote(data['user_id'], data['selection'])
+        add_vote(user_id=data['user_id'], vote=data['selection'], poll_id=data['poll_id'])
     except Exception:
         context = {
             "message": "Error submitting user vote",
@@ -107,19 +128,19 @@ def get_choices(date=datetime.date(datetime.now())):
     return choices
 
 # Add user vote to db for specified day's poll
-def add_vote(user_id, vote, date=datetime.date(datetime.now())):
-    query = 'INSERT INTO user_votes VALUES ({},{},{})'.format(sqlify(user_id), sqlify(date), sqlify(vote))
+def add_vote(user_id, vote, poll_id, date=datetime.date(datetime.now())):
+    query = 'INSERT INTO user_votes VALUES ({},{},{},{})'.format(sqlify(user_id), sqlify(date), sqlify(vote), sqlify(poll_id))
     conn = get_db()
     conn.execute(query)
     
 # Retrieve whether specified user has voted in day's poll from db
 def has_voted(user_id, date=datetime.date(datetime.now())):
-    query = 'SELECT count(*), v.choice FROM user_votes v WHERE v.user_id = {} AND v.vote_date = {}'.format(sqlify(user_id), sqlify(date))
+    query = 'SELECT v.choice FROM user_votes v WHERE v.user_id = {} AND v.vote_date = {}'.format(sqlify(user_id), sqlify(date))
 
     conn = get_db()
     result = conn.execute(query)
 
     for count in result:
-        return (False, '') if (count[0] == 0) else (count[0], count[1])
+        return True, count[0]
     
     return False, ''
